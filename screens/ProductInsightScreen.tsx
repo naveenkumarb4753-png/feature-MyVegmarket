@@ -19,7 +19,7 @@ import { useAppSession } from "@/lib/appSession";
 import { safeBack } from "@/lib/nav";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Linking,
@@ -267,6 +267,14 @@ export default function ProductInsightScreen() {
     () => (data?.history?.length ? buildPreviewPath(data.history) : ""),
     [data]
   );
+
+  const handleChartInteractionStart = useCallback(() => {
+    setIsChartInteracting(true);
+  }, []);
+
+  const handleChartInteractionEnd = useCallback(() => {
+    setIsChartInteracting(false);
+  }, []);
 
   const pulseAnim = useRef(new Animated.Value(0.55)).current;
   useEffect(() => {
@@ -652,8 +660,8 @@ export default function ProductInsightScreen() {
                   series={data?.history ?? []}
                   width={chartWidth}
                   productName={name}
-                  onInteractionStart={() => setIsChartInteracting(true)}
-                  onInteractionEnd={() => setIsChartInteracting(false)}
+                  onInteractionStart={handleChartInteractionStart}
+                  onInteractionEnd={handleChartInteractionEnd}
                 />
               )}
             </View>

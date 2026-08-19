@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from "react-native-svg";
 import Animated, {
   runOnJS,
@@ -78,6 +78,9 @@ export default function MarketTrendChart({
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isInteracting, setIsInteracting] = useState(false);
+
+  const zoomLevelRef = useRef(zoomLevel);
+  zoomLevelRef.current = zoomLevel;
 
   const svgWidth = width;
   const plotW = Math.max(svgWidth - CHART_PAD_L - CHART_PAD_R, 10);
@@ -169,13 +172,13 @@ export default function MarketTrendChart({
     () =>
       Gesture.Pan()
         .onBegin(() => {
-          handleInteractionStart();
+          runOnJS(handleInteractionStart)();
         })
         .onUpdate((e: { x: number }) => {
-          handleTouch(e.x);
+          runOnJS(handleTouch)(e.x);
         })
         .onFinalize(() => {
-          handleInteractionEnd();
+          runOnJS(handleInteractionEnd)();
         }),
     [handleInteractionEnd, handleInteractionStart, handleTouch]
   );
@@ -184,16 +187,16 @@ export default function MarketTrendChart({
     () =>
       Gesture.Pinch()
         .onBegin(() => {
-          handleInteractionStart();
+          runOnJS(handleInteractionStart)();
         })
         .onUpdate((e: { scale: number }) => {
-          const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomLevel * e.scale));
-          setZoomLevel(newZoom);
+          const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomLevelRef.current * e.scale));
+          runOnJS(setZoomLevel)(newZoom);
         })
         .onFinalize(() => {
-          handleInteractionEnd();
+          runOnJS(handleInteractionEnd)();
         }),
-    [handleInteractionEnd, handleInteractionStart, zoomLevel]
+    [handleInteractionEnd, handleInteractionStart, setZoomLevel]
   );
 
   const composedGesture = useMemo(
@@ -318,15 +321,14 @@ export default function MarketTrendChart({
           </View>
 
           {/* Interactive Chart */}
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <GestureDetector gesture={composedGesture}>
-              <Animated.View
-                style={[
-                  styles.chartInteractionContainer,
-                  chartInteractionContainerStyle,
-                  Platform.select({ web: { touchAction: "none" } as object }),
-                ]}
-              >
+          <GestureDetector gesture={composedGesture}>
+            <Animated.View
+              style={[
+                styles.chartInteractionContainer,
+                chartInteractionContainerStyle,
+                Platform.select({ web: { touchAction: "none" } as object }),
+              ]}
+            >
                 <ScrollView
                   ref={scrollRef}
                   horizontal
@@ -429,8 +431,7 @@ export default function MarketTrendChart({
                 ) : null}
               </Animated.View>
             </GestureDetector>
-          </GestureHandlerRootView>
-        </>
+          </>
       )}
     </View>
   );
