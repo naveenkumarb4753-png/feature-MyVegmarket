@@ -1,0 +1,37 @@
+# Cursor Ignore rules to optimize token usage and indexing performance for MyVegmarket project
+# Disables indexing of build outputs, dependencies, web-app duplicate routes, and confidential backend/auth configs
+
+# Dependencies & Package Managers
+node_modules/
+.npm/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build Outputs & Cache
+.expo/
+dist/
+web-build/
+.next/
+out/
+build/
+*.tsbuildinfo
+*.log
+
+# Environmental & Confidential Configuration Files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Web App / Web Version Backup Routes (Excluding from Mobile App Cursor Focus)
+src/web-app/
+src/api-backup/
+
+# Tooling & System Metadata
+.vscode/
+.idea/
+.git/
+.qodo/
+.blackbox/
