@@ -19,7 +19,6 @@
       "package": "com.myvegmarket.app",
       "versionCode": 6,
       "googleServicesFile": "./google-services.json",
-      "useNextNotificationsApi": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

@@ -17,12 +17,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    ".expo",
-    "src/web-app",
-    "src/api-backup",
-    "src/components",
-    "src/lib",
-    "next.config.ts",
-    "next.config.mjs"
+    ".expo"
   ]
 }
