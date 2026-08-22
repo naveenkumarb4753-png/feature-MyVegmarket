@@ -1,8 +1,11 @@
-import { supabase } from "@/lib/supabase";
-import { useAppSession } from "@/lib/appSession";
-import ProduceImage from "@/components/ProduceImage";
+
+
+
 import EmptyState from "@/components/EmptyState";
+import ProduceImage from "@/components/ProduceImage";
 import VegLoader from "@/components/VegLoader";
+import { useAppSession } from "@/lib/appSession";
+import { safeBack } from "@/lib/nav";
 import {
   GREEN,
   HD_IMAGES,
@@ -13,23 +16,20 @@ import {
   formatPrice,
   isNewListing,
   isUpcoming,
-  matchCategory,
-  produceImage,
-  categoryAccent,
+  matchCategory
 } from "@/lib/produceUi";
+import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import { safeBack } from "@/lib/nav";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -37,6 +37,11 @@ type ContainerItem = {
   id: string;
   title: string | null;
   packaging: string | null;
+  packaging_type?: string | null;
+  package_count?: number | null;
+  weight_per_package_kg?: number | null;
+  rate_type?: string | null;
+  rate?: number | null;
   qty: number | null;
   quantity_unit: string | null;
   price: number | null;
@@ -149,6 +154,38 @@ const FALLBACK_UPCOMING: ContainerItem[] = [
   },
 ];
 
+function displayRate(item: ContainerItem) {
+  const value = item.rate ?? item.price;
+  return formatPrice(item.currency || "AED", value);
+}
+
+function displayRateUnit(item: ContainerItem) {
+  if (item.rate_type === "per_kg") return "kg";
+  if (item.rate_type === "per_piece") return "piece";
+  return "container";
+}
+
+function displayContainer(item: ContainerItem) {
+  return item.container_type || containerLabel(item.container_type, item.qty);
+}
+
+function displayPackagingType(item: ContainerItem) {
+  return item.packaging_type || item.packaging || null;
+}
+
+function displayPackageCount(item: ContainerItem) {
+  if (item.package_count != null) return String(item.package_count);
+  if (item.qty != null) return String(item.qty);
+  return null;
+}
+
+function displayWeightPerPackage(item: ContainerItem) {
+  if (item.weight_per_package_kg != null) {
+    return `${item.weight_per_package_kg} kg`;
+  }
+  return null;
+}
+
 export default function ContainersScreen() {
   const router = useRouter();
   const session = useAppSession();
@@ -166,7 +203,7 @@ export default function ContainersScreen() {
     const { data, error: queryError } = await supabase
       .from("containers")
       .select(
-        "id,title,packaging,qty,quantity_unit,price,currency,route_from,route_to,availability_date,image_url,company_name,market_location,container_type,category,created_at,is_active"
+        "id,title,packaging,packaging_type,package_count,weight_per_package_kg,rate_type,rate,qty,quantity_unit,price,currency,route_from,route_to,availability_date,image_url,company_name,market_location,container_type,category,created_at,is_active"
       )
       .eq("is_active", true)
       .order("created_at", { ascending: false });
@@ -225,9 +262,9 @@ export default function ContainersScreen() {
       title: item.title || "Fresh Produce",
       origin: item.route_from,
       location: item.market_location || item.route_to,
-      priceLabel: formatPrice(item.currency, item.price),
+      priceLabel: displayRate(item),
       imageUrl: item.image_url,
-      containerLabel: containerLabel(item.container_type, item.qty),
+      containerLabel: displayContainer(item),
     };
   }
 
@@ -279,10 +316,19 @@ export default function ContainersScreen() {
           <Text style={styles.meta}>
             {countryFlag(origin)} {origin}
           </Text>
-          <Text style={styles.meta}>{containerLabel(item.container_type, item.qty)}</Text>
+          <Text style={styles.meta}>Container: {displayContainer(item)}</Text>
+          {displayPackagingType(item) ? (
+            <Text style={styles.meta}>Packaging: {displayPackagingType(item)}</Text>
+          ) : null}
+          {displayPackageCount(item) ? (
+            <Text style={styles.meta}>Packages: {displayPackageCount(item)}</Text>
+          ) : null}
+          {displayWeightPerPackage(item) ? (
+            <Text style={styles.meta}>Weight/package: {displayWeightPerPackage(item)}</Text>
+          ) : null}
           <Text style={styles.meta}>Available: {item.market_location || item.route_to || "Dubai"}</Text>
           <View style={styles.bottomRow}>
-            <Text style={styles.price}>{formatPrice(item.currency, item.price)} / Container</Text>
+            <Text style={styles.price}>{displayRate(item)} / {displayRateUnit(item)}</Text>
             {arrived ? (
               <View style={styles.arrivedPill}>
                 <Text style={styles.arrivedText}>Arrived: {arrived}</Text>
@@ -321,9 +367,18 @@ export default function ContainersScreen() {
           <Text style={styles.meta}>
             {countryFlag(origin)} {origin}
           </Text>
-          <Text style={styles.meta}>{containerLabel(item.container_type, item.qty)}</Text>
+          <Text style={styles.meta}>Container: {displayContainer(item)}</Text>
+          {displayPackagingType(item) ? (
+            <Text style={styles.meta}>Packaging: {displayPackagingType(item)}</Text>
+          ) : null}
+          {displayPackageCount(item) ? (
+            <Text style={styles.meta}>Packages: {displayPackageCount(item)}</Text>
+          ) : null}
+          {displayWeightPerPackage(item) ? (
+            <Text style={styles.meta}>Weight/package: {displayWeightPerPackage(item)}</Text>
+          ) : null}
           <Text style={styles.meta}>Available: {item.market_location || item.route_to || "Dubai"}</Text>
-          <Text style={styles.price}>{formatPrice(item.currency, item.price)} / Container</Text>
+          <Text style={styles.price}>{displayRate(item)} / {displayRateUnit(item)}</Text>
           <Pressable
             style={[styles.prebookBtn, booked && styles.prebookBtnOn]}
             onPress={() => {

@@ -1,10 +1,11 @@
-import { getExporterSession } from "@/lib/exporterAuth";
-import { useAppSession } from "@/lib/appSession";
 import AnimatedPressable from "@/components/AnimatedPressable";
 import VegLoader from "@/components/VegLoader";
 import { BRAND } from "@/constants/colors";
+import { useAppSession } from "@/lib/appSession";
+import { getExporterSession } from "@/lib/exporterAuth";
 import { supabase } from "@/lib/supabase";
 import { Picker } from "@react-native-picker/picker";
+import { File as ExpoFile } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -29,8 +30,9 @@ const BUCKET = "container_images";
 
 const CONTAINER_TYPES = ["20ft", "40ft", "20ft Reefer", "40ft Reefer"];
 const CATEGORIES = ["vegetables", "fruits", "spices", "nuts", "eggs", "oils"];
-const QUANTITY_UNITS = ["kg", "tons", "boxes", "cartons", "units"];
-const CURRENCIES = ["USD", "AED", "INR", "EUR"];
+const PACKAGING_TYPES = ["Bag", "Carton Box"] as const;
+const RATE_TYPES = ["Per Kg", "Per Piece"] as const;
+const CURRENCIES = ["AED", "USD", "INR", "EUR"];
 
 type ExporterRow = {
   id: string;
@@ -48,10 +50,11 @@ type ExporterRow = {
 
 type ProductLine = {
   commodity: string;
-  packaging: string;
-  quantity: string;
-  quantityUnit: string;
-  price: string;
+  packagingType: "Bag" | "Carton Box";
+  packageCount: string;
+  weightPerPackageKg: string;
+  rateType: "Per Kg" | "Per Piece";
+  rate: string;
 };
 
 type NoticeState = {
@@ -74,6 +77,32 @@ function makeBatchId() {
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+function packageLabel(packagingType: ProductLine["packagingType"]) {
+  return packagingType === "Carton Box" ? "Boxes" : "Bags";
+}
+
+function totalWeightKg(line: ProductLine) {
+  const count = Number(line.packageCount);
+  const weight = Number(line.weightPerPackageKg);
+
+  if (!Number.isFinite(count) || !Number.isFinite(weight) || count <= 0 || weight <= 0) {
+    return null;
+  }
+
+  return count * weight;
+}
+
+function formatTotalWeight(line: ProductLine) {
+  const total = totalWeightKg(line);
+  if (total === null) return "Enter package count and weight to calculate";
+
+  const kg = total.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  const mt = total / 1000;
+  const mtText = mt.toLocaleString("en-US", { maximumFractionDigits: 3 });
+
+  return `${kg} kg (${mtText} MT)`;
 }
 
 export default function PostAdScreen() {
@@ -102,7 +131,14 @@ export default function PostAdScreen() {
   const [readyDate, setReadyDate] = useState(new Date().toISOString().slice(0, 10));
 
   const [lines, setLines] = useState<ProductLine[]>([
-    { commodity: "", packaging: "", quantity: "", quantityUnit: "kg", price: "" },
+    {
+      commodity: "",
+      packagingType: "Bag",
+      packageCount: "",
+      weightPerPackageKg: "",
+      rateType: "Per Kg",
+      rate: "",
+    },
   ]);
 
   const [imageAsset, setImageAsset] =
@@ -294,7 +330,14 @@ export default function PostAdScreen() {
   function addLine() {
     setLines((prev) => [
       ...prev,
-      { commodity: "", packaging: "", quantity: "", quantityUnit: "kg", price: "" },
+      {
+        commodity: "",
+        packagingType: "Bag",
+        packageCount: "",
+        weightPerPackageKg: "",
+        rateType: "Per Kg",
+        rate: "",
+      },
     ]);
   }
 
@@ -323,29 +366,85 @@ export default function PostAdScreen() {
     }
   }
 
-  async function uploadContainerImage(batchId: string) {
-    if (!imageAsset?.uri) return null;
+ async function uploadContainerImage(batchId: string) {
+  if (!imageAsset?.uri) return null;
 
-    const response = await fetch(imageAsset.uri);
-    const blob = await response.blob();
-
+  try {
     const originTag = slugify(origin || "unknown-origin");
-    const firstProduct = slugify(lines[0]?.commodity || "container");
-    const ext = imageAsset.fileName?.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${originTag}/${firstProduct}-${batchId}.${ext}`;
+    const firstProduct = slugify(
+      lines[0]?.commodity || "container"
+    );
 
-    const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
-      upsert: true,
-      contentType: imageAsset.mimeType || "image/jpeg",
-    });
+    const mimeType =
+      imageAsset.mimeType || "image/jpeg";
 
-    if (error) {
-      showNotice("error", `Image upload failed: ${error.message}`);
+    let ext =
+      imageAsset.fileName
+        ?.split(".")
+        .pop()
+        ?.toLowerCase() ||
+      mimeType.split("/")[1] ||
+      "jpg";
+
+    if (ext === "jpeg") {
+      ext = "jpg";
+    }
+
+    const path =
+      `${originTag}/${firstProduct}-${batchId}.${ext}`;
+
+    // IMPORTANT: Expo File, not browser File
+    const file = new ExpoFile(imageAsset.uri);
+
+    if (!file.exists) {
+      showNotice(
+        "error",
+        "Selected image file could not be found."
+      );
       return null;
     }
 
+    const arrayBuffer = await file.arrayBuffer();
+
+    console.log("IMAGE URI:", imageAsset.uri);
+    console.log("IMAGE SIZE:", file.size);
+    console.log("IMAGE TYPE:", mimeType);
+    console.log("UPLOAD PATH:", path);
+
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, arrayBuffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.log("IMAGE UPLOAD ERROR:", error);
+
+      showNotice(
+        "error",
+        `Image upload failed: ${error.message}`
+      );
+
+      return null;
+    }
+
+    console.log("IMAGE UPLOADED SUCCESSFULLY:", path);
+
     return path;
+  } catch (error: any) {
+    console.log("IMAGE UPLOAD EXCEPTION:", error);
+
+    showNotice(
+      "error",
+      `Image upload failed: ${
+        error?.message ?? "Unknown error"
+      }`
+    );
+
+    return null;
   }
+}
 
   async function submitListing() {
     if (!sessionEmail) {
@@ -392,9 +491,9 @@ export default function PostAdScreen() {
       .map((line) => ({
         ...line,
         commodity: line.commodity.trim(),
-        packaging: line.packaging.trim(),
-        quantity: line.quantity.trim(),
-        price: line.price.trim(),
+        packageCount: line.packageCount.trim(),
+        weightPerPackageKg: line.weightPerPackageKg.trim(),
+        rate: line.rate.trim(),
       }))
       .filter((line) => line.commodity.length > 0);
 
@@ -404,28 +503,40 @@ export default function PostAdScreen() {
     }
 
     for (const line of cleanLines) {
-      if (!line.packaging) {
-        showNotice("error", "Packaging is required for all products.");
+      const packageCount = Number(line.packageCount);
+      if (
+        !line.packageCount ||
+        !Number.isFinite(packageCount) ||
+        packageCount <= 0 ||
+        !Number.isInteger(packageCount)
+      ) {
+        showNotice(
+          "error",
+          `Enter a valid number of ${packageLabel(line.packagingType).toLowerCase()} for all products.`
+        );
         return;
       }
 
-      const q = Number(line.quantity);
-      if (!line.quantity || !Number.isFinite(q) || q <= 0) {
-        showNotice("error", "Enter valid quantity for all products.");
+      const weightPerPackageKg = Number(line.weightPerPackageKg);
+      if (
+        !line.weightPerPackageKg ||
+        !Number.isFinite(weightPerPackageKg) ||
+        weightPerPackageKg <= 0
+      ) {
+        showNotice(
+          "error",
+          `Enter a valid weight per ${line.packagingType === "Carton Box" ? "box" : "bag"} for all products.`
+        );
         return;
       }
 
-      if (!line.quantityUnit) {
-        showNotice("error", "Quantity unit is required.");
+      const rate = Number(line.rate);
+      if (!line.rate || !Number.isFinite(rate) || rate <= 0) {
+        showNotice(
+          "error",
+          `Enter a valid ${line.rateType === "Per Kg" ? "rate per kg" : "rate per piece"} for all products.`
+        );
         return;
-      }
-
-      if (line.price) {
-        const p = Number(line.price);
-        if (!Number.isFinite(p) || p < 0) {
-          showNotice("error", "Enter valid price or leave it empty.");
-          return;
-        }
       }
     }
 
@@ -437,28 +548,39 @@ export default function PostAdScreen() {
       if (imageAsset && !imgPath) return;
       if (imgPath) setUploadedPath(imgPath);
 
-      const rows = cleanLines.map((line) => ({
-        exporter_uuid: profile.id,
-        email: sessionEmail,
-        category,
-        origin,
-        destination,
-        ready_date: readyDate,
-        container_type: containerType,
-        currency,
-        whatsapp: (profile.phone ?? "").trim(),
-        market_location: marketLocation,
-        image_path: imgPath,
-        batch_id: batchId,
-        commodity: line.commodity,
-        packaging: line.packaging,
-        quantity: Number(line.quantity),
-        quantity_unit: line.quantityUnit,
-        price: line.price ? Number(line.price) : null,
-        status: "pending",
-        company_name: profile.company_name ?? null,
-        contact_person: profile.full_name ?? null,
-      }));
+      const rows = cleanLines.map((line) => {
+        const packageCount = Number(line.packageCount);
+        const weightPerPackageKg = Number(line.weightPerPackageKg);
+        const rate = Number(line.rate);
+        const normalizedRateType = line.rateType === "Per Kg" ? "per_kg" : "per_piece";
+
+        return {
+          exporter_uuid: profile.id,
+          email: sessionEmail,
+          category,
+          origin: origin.trim(),
+          destination: destination.trim(),
+          ready_date: readyDate,
+          container_type: containerType,
+          currency,
+          whatsapp: (profile.phone ?? "").trim(),
+          market_location: marketLocation.trim(),
+          image_path: imgPath,
+          batch_id: batchId,
+          commodity: line.commodity,
+
+          // New packing / rate structure
+          packaging_type: line.packagingType,
+          package_count: packageCount,
+          weight_per_package_kg: weightPerPackageKg,
+          rate_type: normalizedRateType,
+          rate,
+
+          status: "pending",
+          company_name: profile.company_name ?? null,
+          contact_person: profile.full_name ?? null,
+        };
+      });
 
       const { error } = await supabase.from(LISTINGS_TABLE).insert(rows);
 
@@ -480,7 +602,14 @@ export default function PostAdScreen() {
       setCurrency(CURRENCIES[0]);
       setReadyDate(new Date().toISOString().slice(0, 10));
       setLines([
-        { commodity: "", packaging: "", quantity: "", quantityUnit: "kg", price: "" },
+        {
+          commodity: "",
+          packagingType: "Bag",
+          packageCount: "",
+          weightPerPackageKg: "",
+          rateType: "Per Kg",
+          rate: "",
+        },
       ]);
       setImageAsset(null);
       setUploadedPath(null);
@@ -749,30 +878,59 @@ export default function PostAdScreen() {
                       (v) => updateLine(index, { commodity: v }),
                       "Ex: Onion"
                     )}
-                    {renderTextField(
+
+                    {renderChoiceRow(
                       "Packaging Type",
-                      line.packaging,
-                      (v) => updateLine(index, { packaging: v }),
-                      "Ex: 10kg bag"
+                      line.packagingType,
+                      [...PACKAGING_TYPES],
+                      (v) =>
+                        updateLine(index, {
+                          packagingType: v as ProductLine["packagingType"],
+                        })
                     )}
+
                     {renderTextField(
-                      "Quantity",
-                      line.quantity,
-                      (v) => updateLine(index, { quantity: v }),
-                      "Ex: 500",
+                      line.packagingType === "Carton Box"
+                        ? "Number of Boxes"
+                        : "Number of Bags",
+                      line.packageCount,
+                      (v) => updateLine(index, { packageCount: v }),
+                      line.packagingType === "Carton Box" ? "Ex: 1200" : "Ex: 520",
                       "numeric"
                     )}
-                    {renderChoiceRow(
-                      "Quantity Unit",
-                      line.quantityUnit,
-                      QUANTITY_UNITS,
-                      (v) => updateLine(index, { quantityUnit: v })
-                    )}
+
                     {renderTextField(
-                      "Price (optional)",
-                      line.price,
-                      (v) => updateLine(index, { price: v }),
-                      "Leave empty if not fixed",
+                      line.packagingType === "Carton Box"
+                        ? "Weight per Box (kg)"
+                        : "Weight per Bag (kg)",
+                      line.weightPerPackageKg,
+                      (v) => updateLine(index, { weightPerPackageKg: v }),
+                      line.packagingType === "Carton Box" ? "Ex: 4" : "Ex: 25",
+                      "numeric"
+                    )}
+
+                    <View style={styles.totalWeightBox}>
+                      <Text style={styles.totalWeightLabel}>Total Packed Weight</Text>
+                      <Text style={styles.totalWeightValue}>
+                        {formatTotalWeight(line)}
+                      </Text>
+                    </View>
+
+                    {renderChoiceRow(
+                      "Rate Type",
+                      line.rateType,
+                      [...RATE_TYPES],
+                      (v) =>
+                        updateLine(index, {
+                          rateType: v as ProductLine["rateType"],
+                        })
+                    )}
+
+                    {renderTextField(
+                      line.rateType === "Per Kg" ? "Rate per Kg" : "Rate per Piece",
+                      line.rate,
+                      (v) => updateLine(index, { rate: v }),
+                      line.rateType === "Per Kg" ? "Ex: 2.40" : "Ex: 18",
                       "numeric"
                     )}
                   </View>
@@ -1080,6 +1238,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: "#111713",
+  },
+  totalWeightBox: {
+    marginTop: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#DCE9E1",
+    backgroundColor: "#F1F8F4",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  totalWeightLabel: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#648770",
+    marginBottom: 4,
+  },
+  totalWeightValue: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: BRAND.primary,
   },
   lineCard: {
     marginTop: 14,

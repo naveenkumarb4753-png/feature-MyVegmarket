@@ -1,21 +1,21 @@
-import { BRAND } from "@/constants/colors";
-import EmptyState from "@/components/EmptyState";
 import AnimatedPressable from "@/components/AnimatedPressable";
+import EmptyState from "@/components/EmptyState";
 import VegLoader from "@/components/VegLoader";
+import { BRAND } from "@/constants/colors";
 import { useAppSession } from "@/lib/appSession";
+import { safeBack } from "@/lib/nav";
 import {
+  categoryAccent,
   containerLabel,
   countryFlag,
+  formatArrived,
   formatPrice,
   isNewListing,
   produceImage,
-  formatArrived,
-  categoryAccent,
 } from "@/lib/produceUi";
 import { isVerifiedAdmin } from "@/lib/rolesMobile";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { safeBack } from "@/lib/nav";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
@@ -31,6 +31,11 @@ type ContainerItem = {
   id: string;
   title: string | null;
   packaging: string | null;
+  packaging_type?: string | null;
+  package_count?: number | null;
+  weight_per_package_kg?: number | null;
+  rate_type?: string | null;
+  rate?: number | null;
   qty: number | null;
   quantity_unit: string | null;
   price: number | null;
@@ -45,6 +50,48 @@ type ContainerItem = {
   category: string | null;
   created_at?: string | null;
 };
+
+function displayRate(item: ContainerItem) {
+  const value = item.rate ?? item.price;
+  return formatPrice(item.currency || "AED", value);
+}
+
+function displayRateUnit(item: ContainerItem) {
+  if (item.rate_type === "per_kg") return "Per kg";
+  if (item.rate_type === "per_piece") return "Per Piece";
+  return "Per Container";
+}
+
+function displayContainer(item: ContainerItem) {
+  return item.container_type || containerLabel(item.container_type, item.qty);
+}
+
+function displayPackagingType(item: ContainerItem) {
+  return item.packaging_type || item.packaging || null;
+}
+
+function displayPackageCount(item: ContainerItem) {
+  if (item.package_count != null) return String(item.package_count);
+  if (item.qty != null) return String(item.qty);
+  return null;
+}
+
+function displayWeightPerPackage(item: ContainerItem) {
+  if (item.weight_per_package_kg != null) {
+    return `${item.weight_per_package_kg} kg`;
+  }
+  return null;
+}
+
+function displayTotalWeight(item: ContainerItem) {
+  if (
+    item.package_count != null &&
+    item.weight_per_package_kg != null
+  ) {
+    return `${item.package_count * item.weight_per_package_kg} kg`;
+  }
+  return null;
+}
 
 function MetaRow({
   icon,
@@ -171,9 +218,9 @@ export default function ContainerDetailScreen() {
                 title: item.title || "Fresh Produce",
                 origin: item.route_from,
                 location: item.market_location || item.route_to,
-                priceLabel: formatPrice(item.currency, item.price),
+                priceLabel: displayRate(item),
                 imageUrl: item.image_url,
-                containerLabel: containerLabel(item.container_type, item.qty),
+                containerLabel: displayContainer(item),
               })
             }
             haptic
@@ -209,9 +256,9 @@ export default function ContainerDetailScreen() {
         {/* ── Price highlight ── */}
         <View style={styles.priceHighlight}>
           <View style={styles.priceBlock}>
-            <Text style={styles.priceLabel}>Container Price</Text>
-            <Text style={styles.priceValue}>{formatPrice(item.currency, item.price)}</Text>
-            <Text style={styles.priceUnit}>Per Container</Text>
+            <Text style={styles.priceLabel}>Price</Text>
+            <Text style={styles.priceValue}>{displayRate(item)}</Text>
+            <Text style={styles.priceUnit}>{displayRateUnit(item)}</Text>
           </View>
           {arrivalDate ? (
             <View style={[styles.priceBlock, styles.arrivalBlock]}>
@@ -246,7 +293,7 @@ export default function ContainerDetailScreen() {
           <MetaRow
             icon="cube-outline"
             label="Container"
-            value={containerLabel(item.container_type, item.qty)}
+            value={displayContainer(item)}
             accentColor={BRAND.primary}
           />
           <MetaRow
@@ -268,13 +315,51 @@ export default function ContainerDetailScreen() {
               accentColor={accent.accent}
             />
           ) : null}
-          {item.packaging ? (
+          {displayPackagingType(item) ? (
             <MetaRow
               icon="layers-outline"
-              label="Packaging"
-              value={item.packaging}
+              label="Packaging Type"
+              value={displayPackagingType(item)!}
             />
           ) : null}
+          {displayPackageCount(item) ? (
+            <MetaRow
+              icon="albums-outline"
+              label="Package Count"
+              value={displayPackageCount(item)!}
+            />
+          ) : null}
+          {displayWeightPerPackage(item) ? (
+            <MetaRow
+              icon="scale-outline"
+              label="Weight Per Package"
+              value={displayWeightPerPackage(item)!}
+            />
+          ) : null}
+          {displayTotalWeight(item) ? (
+            <MetaRow
+              icon="calculator-outline"
+              label="Total Weight"
+              value={displayTotalWeight(item)!}
+            />
+          ) : null}
+          <MetaRow
+            icon="pricetag-outline"
+            label="Rate Type"
+            value={
+              item.rate_type === "per_kg"
+                ? "Per Kg"
+                : item.rate_type === "per_piece"
+                  ? "Per Piece"
+                  : "Per Container"
+            }
+          />
+          <MetaRow
+            icon="cash-outline"
+            label="Rate"
+            value={`${displayRate(item)} ${displayRateUnit(item)}`}
+            accentColor={BRAND.primary}
+          />
         </View>
 
         {/* ── Inquiry CTA ── */}
