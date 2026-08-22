@@ -57,20 +57,21 @@ export default function GlobalSearchBar({
         accessibilityRole="search"
         accessibilityLabel="Global Search"
       >
-        <Ionicons name="search" size={18} color={BRAND.muted} />
+        <View style={styles.iconCircle}>
+          <Ionicons name="search-outline" size={15} color="#111827" />
+        </View>
         <Animated.Text style={[styles.searchPlaceholder, { opacity: searchFade }]} numberOfLines={1}>
           {placeholderPrefix} {searchText}…
         </Animated.Text>
-        <View style={styles.searchMic}>
-          <Ionicons name="mic-outline" size={16} color={BRAND.primary} />
-        </View>
       </Pressable>
     );
   }
 
   return (
     <View style={styles.searchBox}>
-      <Ionicons name="search" size={18} color={BRAND.muted} />
+      <View style={styles.iconCircle}>
+        <Ionicons name="search-outline" size={15} color="#111827" />
+      </View>
       <View style={styles.inputContainer}>
         {(!value || value.length === 0) ? (
           <Animated.Text style={[styles.inputPlaceholder, { opacity: searchFade }]} pointerEvents="none">
@@ -88,11 +89,7 @@ export default function GlobalSearchBar({
         <Pressable onPress={onClear} hitSlop={8}>
           <Ionicons name="close-circle" size={18} color="#CBD5E1" />
         </Pressable>
-      ) : (
-        <View style={styles.searchMic}>
-          <Ionicons name="mic-outline" size={16} color={BRAND.primary} />
-        </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -106,12 +103,22 @@ const styles = StyleSheet.create({
     borderColor: BRAND.borderLight,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     gap: 10,
     shadowColor: BRAND.shadow,
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+  },
+  iconCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: BRAND.borderLight,
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchPlaceholder: {
     flex: 1,
@@ -133,16 +140,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: BRAND.text,
     padding: 0,
-  },
-  searchMic: {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    backgroundColor: "rgba(15,157,58,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

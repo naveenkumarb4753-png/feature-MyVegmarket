@@ -246,7 +246,7 @@ export default function ContainersScreen() {
         style={styles.heartBtn}
         onPress={() => session.toggleWishlist(wishPayload(item))}
       >
-        <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={16} color={wishlisted ? "#E11D48" : GREEN} />
+        <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={16} color={wishlisted ? "#E11D48" : "#111827"} />
       </Pressable>
     );
   }
@@ -361,7 +361,7 @@ export default function ContainersScreen() {
           </Pressable>
           {session.isLoggedIn ? (
             <Pressable onPress={() => session.setWishlistOpen(true)} style={styles.iconBtn} hitSlop={8}>
-              <Ionicons name="heart-outline" size={20} color={GREEN} />
+              <Ionicons name="heart-outline" size={20} color="#111827" />
             </Pressable>
           ) : null}
         </View>
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "800", color: "#111827" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "600", color: "#111827" },
   headerRight: { flexDirection: "row", minWidth: 80, justifyContent: "flex-end" },
   chipsWrap: { flexGrow: 0 },
   chips: { paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
@@ -483,9 +483,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#111827",
   },
   imageBadge: {
     position: "absolute",
@@ -499,7 +501,7 @@ const styles = StyleSheet.create({
   imageBadgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "800" },
   body: { flex: 1, minWidth: 0, justifyContent: "center" },
   upcomingBody: { paddingTop: 28, paddingRight: 4 },
-  product: { fontSize: 15, fontWeight: "800", color: "#111827" },
+  product: { fontSize: 15, fontWeight: "600", color: "#111827" },
   meta: { marginTop: 4, fontSize: 12, color: "#6B7280", fontWeight: "600" },
   bottomRow: { marginTop: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   price: { marginTop: 8, fontSize: 14, fontWeight: "800", color: "#111827", flex: 1 },
@@ -511,7 +513,7 @@ const styles = StyleSheet.create({
   },
   arrivedText: { color: GREEN, fontSize: 11, fontWeight: "800" },
   upcomingWrap: { marginTop: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#111827", marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: "600", color: "#111827", marginBottom: 12 },
   upcomingCorner: {
     position: "absolute",
     top: 10,
@@ -540,7 +542,7 @@ const styles = StyleSheet.create({
   prebookTextOn: { color: GREEN },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   loadingText: { marginTop: 8, color: "#6B7280", fontWeight: "600" },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: "#111827" },
+  emptyTitle: { fontSize: 18, fontWeight: "600", color: "#111827" },
   emptyText: { marginTop: 8, color: "#6B7280", textAlign: "center" },
   retryBtn: {
     marginTop: 16,

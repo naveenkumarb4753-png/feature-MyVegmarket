@@ -181,7 +181,7 @@ export default function ContainerDetailScreen() {
             <Ionicons
               name={wishlisted ? "heart" : "heart-outline"}
               size={20}
-              color={wishlisted ? "#E11D48" : BRAND.primary}
+              color={wishlisted ? "#E11D48" : BRAND.text}
             />
           </AnimatedPressable>
         </View>
@@ -204,22 +204,6 @@ export default function ContainerDetailScreen() {
               </View>
             ) : null}
           </View>
-        </View>
-
-        {/* ── Price highlight ── */}
-        <View style={styles.priceHighlight}>
-          <View style={styles.priceBlock}>
-            <Text style={styles.priceLabel}>Container Price</Text>
-            <Text style={styles.priceValue}>{formatPrice(item.currency, item.price)}</Text>
-            <Text style={styles.priceUnit}>Per Container</Text>
-          </View>
-          {arrivalDate ? (
-            <View style={[styles.priceBlock, styles.arrivalBlock]}>
-              <Text style={[styles.priceLabel, { color: "rgba(255,255,255,0.8)" }]}>Availability</Text>
-              <Text style={[styles.priceValue, { fontSize: 18 }]}>{arrivalDate}</Text>
-              <Text style={[styles.priceUnit, { color: "rgba(255,255,255,0.7)" }]}>Arrival Date</Text>
-            </View>
-          ) : null}
         </View>
 
         {/* ── Title ── */}
@@ -333,7 +317,7 @@ const styles = StyleSheet.create({
   heartBtn: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 999,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -369,42 +353,11 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" },
 
-  // Price highlight section
-  priceHighlight: {
-    marginHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: BRAND.primary,
-    flexDirection: "row",
-    marginBottom: 18,
-    overflow: "hidden",
-    shadowColor: BRAND.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  priceBlock: {
-    flex: 1,
-    padding: 18,
-  },
-  arrivalBlock: {
-    backgroundColor: "#065F24",
-  },
-  priceLabel: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: "rgba(255,255,255,0.75)",
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-  },
-  priceValue: { fontSize: 24, fontWeight: "900", color: "#FFFFFF", marginTop: 6 },
-  priceUnit: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.75)", marginTop: 2 },
-
   // Title
   title: {
     marginHorizontal: 16,
     fontSize: 26,
-    fontWeight: "900",
+    fontWeight: "600",
     color: BRAND.text,
     letterSpacing: -0.5,
   },

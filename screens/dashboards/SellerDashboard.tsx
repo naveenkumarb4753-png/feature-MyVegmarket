@@ -134,17 +134,6 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        <View style={styles.planBanner}>
-          <View>
-            <Text style={styles.planLabel}>Current Plan</Text>
-            <Text style={styles.planName}>{planName}</Text>
-          </View>
-          <Pressable style={styles.upgradeCta} onPress={() => router.push("/upgrade" as Href)}>
-            <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.upgradeText}>Upgrade</Text>
-          </Pressable>
-        </View>
-
         <Text style={styles.sectionTitle}>Your Ads</Text>
         <View style={styles.adGrid}>
           {ads.map((ad) => (
@@ -166,7 +155,12 @@ export default function SellerDashboard() {
               <View style={styles.gridActions}>
                 <Pressable
                   style={styles.gridBtn}
-                  onPress={() => router.push("/(tabs)/post-ad" as Href)}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/post-ad",
+                      params: { editId: ad.id, adData: JSON.stringify(ad) },
+                    } as Href)
+                  }
                 >
                   <Text style={styles.gridBtnText}>Edit</Text>
                 </Pressable>
@@ -192,10 +186,12 @@ export default function SellerDashboard() {
         ) : null}
 
         <Pressable style={styles.upgradeBanner} onPress={() => router.push("/upgrade" as Href)}>
-          <Ionicons name="diamond-outline" size={20} color={BRAND.gold} />
+          <View style={styles.upgradeIconBubble}>
+            <Ionicons name="rocket-outline" size={18} color={BRAND.primary} />
+          </View>
           <View style={styles.upgradeBannerCopy}>
             <Text style={styles.upgradeBannerTitle}>Boost visibility</Text>
-            <Text style={styles.upgradeBannerSub}>Upgrade for featured placement & analytics</Text>
+            <Text style={styles.upgradeBannerSub}>Upgrade for featured placement & analytics • {planName}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={BRAND.muted} />
         </Pressable>
@@ -349,15 +345,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: BRAND.surface,
-    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
     padding: 14,
     marginTop: 16,
-    borderWidth: 1,
-    borderColor: BRAND.border,
+    borderWidth: 1.5,
+    borderColor: BRAND.primaryLight,
+    shadowColor: BRAND.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  upgradeIconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: BRAND.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
   },
   upgradeBannerCopy: { flex: 1 },
-  upgradeBannerTitle: { fontWeight: "800", color: BRAND.text },
+  upgradeBannerTitle: { fontWeight: "800", color: BRAND.text, fontSize: 14 },
   upgradeBannerSub: { marginTop: 2, fontSize: 12, color: BRAND.muted, fontWeight: "600" },
   feedCard: {
     backgroundColor: BRAND.surface,

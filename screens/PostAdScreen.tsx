@@ -6,8 +6,8 @@ import { BRAND } from "@/constants/colors";
 import { supabase } from "@/lib/supabase";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
-import { useFocusEffect, useRouter, type Href } from "expo-router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -78,6 +78,7 @@ function makeBatchId() {
 
 export default function PostAdScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ editId?: string; adData?: string }>();
   const { setIntendedRole, logout, ready, isLoggedIn } = useAppSession();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,6 +110,40 @@ export default function PostAdScreen() {
     useState<ImagePicker.ImagePickerAsset | null>(null);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
   const [submittingListing, setSubmittingListing] = useState(false);
+
+  useEffect(() => {
+    if (params.adData) {
+      try {
+        const ad = JSON.parse(params.adData);
+        if (ad.category) {
+          const match = CATEGORIES.find((c) => c.toLowerCase() === (ad.category || "").toLowerCase());
+          if (match) setCategory(match);
+        }
+        if (ad.route_from) setOrigin(ad.route_from);
+        if (ad.market_location) setMarketLocation(ad.market_location);
+        if (ad.container_type) {
+          const match = CONTAINER_TYPES.find((ct) => ct.toLowerCase() === (ad.container_type || "").toLowerCase());
+          if (match) setContainerType(match);
+        }
+        if (ad.currency) {
+          const match = CURRENCIES.find((curr) => curr.toUpperCase() === (ad.currency || "").toUpperCase());
+          if (match) setCurrency(match);
+        }
+        if (ad.image_url) setUploadedPath(ad.image_url);
+        setLines([
+          {
+            commodity: ad.title || "",
+            packaging: ad.packaging || "40ft",
+            quantity: String(ad.qty ?? "1"),
+            quantityUnit: "container",
+            price: ad.price ? String(ad.price) : "",
+          },
+        ]);
+      } catch (err) {
+        console.warn("Could not parse adData for edit:", err);
+      }
+    }
+  }, [params.adData]);
 
   const [notice, setNotice] = useState<NoticeState>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -436,6 +471,37 @@ export default function PostAdScreen() {
       const imgPath = uploadedPath ?? (await uploadContainerImage(batchId));
       if (imageAsset && !imgPath) return;
       if (imgPath) setUploadedPath(imgPath);
+
+      if (params.editId) {
+        const line = cleanLines[0];
+        const { error } = await supabase
+          .from("containers")
+          .update({
+            title: line.commodity,
+            category,
+            route_from: origin,
+            route_to: destination,
+            market_location: marketLocation,
+            container_type: containerType,
+            currency,
+            price: line.price ? Number(line.price) : null,
+            qty: Number(line.quantity) || 1,
+            packaging: line.packaging,
+            image_url: imgPath ?? undefined,
+          })
+          .eq("id", params.editId);
+
+        if (error) {
+          showNotice("error", error.message);
+          return;
+        }
+
+        showNotice("success", "Listing updated successfully.");
+        setTimeout(() => {
+          router.replace("/dashboard-seller" as Href);
+        }, 1000);
+        return;
+      }
 
       const rows = cleanLines.map((line) => ({
         exporter_uuid: profile.id,
@@ -786,7 +852,9 @@ export default function PostAdScreen() {
                   {submittingListing ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.primaryBtnText}>Submit to Admin</Text>
+                    <Text style={styles.primaryBtnText}>
+                      {params.editId ? "Save Changes" : "Submit to Admin"}
+                    </Text>
                   )}
                 </AnimatedPressable>
               </View>

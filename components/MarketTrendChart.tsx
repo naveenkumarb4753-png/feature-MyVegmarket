@@ -70,7 +70,6 @@ export default function MarketTrendChart({
   onInteractionStart,
   onInteractionEnd,
 }: MarketTrendChartProps) {
-  const [isChartVisible, setIsChartVisible] = useState(false);
   const [range, setRange] = useState<TrendRangeKey>("1M");
   const [viewMode, setViewMode] = useState<ViewMode>("AREA");
   const chartSeries = useMemo(() => normalizeForTrendRange(range, series), [range, series]);
@@ -158,12 +157,12 @@ export default function MarketTrendChart({
 
   const scrollRef = useRef<ScrollView>(null);
 
-  const handleInteractionStart = useCallback(() => {
+  const notifyInteractionStart = useCallback(() => {
     setIsInteracting(true);
     onInteractionStart?.();
   }, [onInteractionStart]);
 
-  const handleInteractionEnd = useCallback(() => {
+  const notifyInteractionEnd = useCallback(() => {
     setIsInteracting(false);
     onInteractionEnd?.();
   }, [onInteractionEnd]);
@@ -172,31 +171,31 @@ export default function MarketTrendChart({
     () =>
       Gesture.Pan()
         .onBegin(() => {
-          runOnJS(handleInteractionStart)();
+          runOnJS(notifyInteractionStart)();
         })
         .onUpdate((e: { x: number }) => {
           runOnJS(handleTouch)(e.x);
         })
         .onFinalize(() => {
-          runOnJS(handleInteractionEnd)();
+          runOnJS(notifyInteractionEnd)();
         }),
-    [handleInteractionEnd, handleInteractionStart, handleTouch]
+    [notifyInteractionEnd, notifyInteractionStart, handleTouch]
   );
 
   const pinchGesture = useMemo(
     () =>
       Gesture.Pinch()
         .onBegin(() => {
-          runOnJS(handleInteractionStart)();
+          runOnJS(notifyInteractionStart)();
         })
         .onUpdate((e: { scale: number }) => {
           const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomLevelRef.current * e.scale));
           runOnJS(setZoomLevel)(newZoom);
         })
         .onFinalize(() => {
-          runOnJS(handleInteractionEnd)();
+          runOnJS(notifyInteractionEnd)();
         }),
-    [handleInteractionEnd, handleInteractionStart, setZoomLevel]
+    [notifyInteractionEnd, notifyInteractionStart, setZoomLevel]
   );
 
   const composedGesture = useMemo(
@@ -229,210 +228,188 @@ export default function MarketTrendChart({
 
   return (
     <View style={styles.cardContainer}>
-      {/* Lazy initialization: show icon + button initially */}
-      {!isChartVisible ? (
-        <View style={styles.placeholderContainer}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="stats-chart-outline" size={32} color="#0A8A3A" />
+      {/* Chart Header */}
+      <View style={styles.topRow}>
+        <View>
+          <View style={styles.titleRow}>
+            <Ionicons name="stats-chart-outline" size={16} color="#0A8A3A" />
+            <Text style={styles.titleText} numberOfLines={1}>
+              {productName} - Market Price Trend
+            </Text>
           </View>
-          <Text style={styles.placeholderTitle}>Price Trend Analysis</Text>
-          <Text style={styles.placeholderSubtitle}>
-            View historical price movements and market insights
-          </Text>
-          <Pressable
-            style={styles.viewTrendButton}
-            onPress={() => setIsChartVisible(true)}
-          >
-            <Ionicons name="trending-up-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.viewTrendButtonText}>View Price Trend</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          {/* Chart Header */}
-          <View style={styles.topRow}>
-            <View>
-              <View style={styles.titleRow}>
-                <Ionicons name="stats-chart-outline" size={16} color="#0A8A3A" />
-                <Text style={styles.titleText} numberOfLines={1}>
-                  {productName} - Market Price Trend
-                </Text>
+          {active ? (
+            <View style={styles.hudRow}>
+              <View style={styles.hudItem}>
+                <Text style={styles.hudLabel}>Price</Text>
+                <Text style={styles.hudValue}>AED {active.value.toFixed(2)}</Text>
               </View>
-              {active ? (
-                <View style={styles.hudRow}>
-                  <View style={styles.hudItem}>
-                    <Text style={styles.hudLabel}>Price</Text>
-                    <Text style={styles.hudValue}>AED {active.value.toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.hudItem}>
-                    <Text style={styles.hudLabel}>Date</Text>
-                    <Text style={styles.hudValue}>{formatDateShort(active.time)}</Text>
-                  </View>
-                </View>
-              ) : null}
+              <View style={styles.hudItem}>
+                <Text style={styles.hudLabel}>Date</Text>
+                <Text style={styles.hudValue}>{formatDateShort(active.time)}</Text>
+              </View>
             </View>
+          ) : null}
+        </View>
 
-            {/* View mode toggle */}
-            <View style={styles.viewModeRow}>
-              {VIEW_MODES.map((mode) => (
-                <Pressable
-                  key={mode}
-                  style={[styles.viewModePill, viewMode === mode && styles.viewModePillActive]}
-                  onPress={() => setViewMode(mode)}
-                >
-                  <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
-                    {mode}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Timeframe selector */}
-          <View style={styles.timeFrameRow}>
-            {TREND_RANGES.map((item) => {
-              const active = item.key === range;
-              return (
-                <Pressable
-                  key={item.key}
-                  style={[styles.tfPill, active && styles.tfPillActive]}
-                  onPress={() => handleRangeChange(item.key)}
-                >
-                  <Text style={[styles.tfText, active && styles.tfTextActive]}>{item.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Zoom controls */}
-          <View style={styles.zoomControlsRow}>
-            <Pressable style={styles.zoomBtn} onPress={handleZoomOut} hitSlop={4}>
-              <Ionicons name="remove-outline" size={14} color="#374151" />
-            </Pressable>
-            <Text style={styles.zoomLevelText}>{Math.round(zoomLevel * 100)}%</Text>
-            <Pressable style={styles.zoomBtn} onPress={handleZoomIn} hitSlop={4}>
-              <Ionicons name="add-outline" size={14} color="#374151" />
-            </Pressable>
-            {zoomLevel !== 1 ? (
-              <Pressable style={styles.zoomBtnReset} onPress={handleZoomReset} hitSlop={4}>
-                <Ionicons name="refresh-outline" size={11} color="#0A8A3A" />
-              </Pressable>
-            ) : null}
-          </View>
-
-          {/* Interactive Chart */}
-          <GestureDetector gesture={composedGesture}>
-            <Animated.View
-              style={[
-                styles.chartInteractionContainer,
-                chartInteractionContainerStyle,
-                Platform.select({ web: { touchAction: "none" } as object }),
-              ]}
+        {/* View mode toggle */}
+        <View style={styles.viewModeRow}>
+          {VIEW_MODES.map((mode) => (
+            <Pressable
+              key={mode}
+              style={[styles.viewModePill, viewMode === mode && styles.viewModePillActive]}
+              onPress={() => setViewMode(mode)}
             >
-                <ScrollView
-                  ref={scrollRef}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  nestedScrollEnabled
-                  bounces
-                  scrollEnabled={!isInteracting}
-                  contentContainerStyle={{ paddingVertical: 4 }}
+              <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
+                {mode}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* Timeframe selector */}
+      <View style={styles.timeFrameRow}>
+        {TREND_RANGES.map((item) => {
+          const active = item.key === range;
+          return (
+            <Pressable
+              key={item.key}
+              style={[styles.tfPill, active && styles.tfPillActive]}
+              onPress={() => handleRangeChange(item.key)}
+            >
+              <Text style={[styles.tfText, active && styles.tfTextActive]}>{item.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Zoom controls */}
+      <View style={styles.zoomControlsRow}>
+        <Pressable style={styles.zoomBtn} onPress={handleZoomOut} hitSlop={4}>
+          <Ionicons name="remove-outline" size={14} color="#374151" />
+        </Pressable>
+        <Text style={styles.zoomLevelText}>{Math.round(zoomLevel * 100)}%</Text>
+        <Pressable style={styles.zoomBtn} onPress={handleZoomIn} hitSlop={4}>
+          <Ionicons name="add-outline" size={14} color="#374151" />
+        </Pressable>
+        {zoomLevel !== 1 ? (
+          <Pressable style={styles.zoomBtnReset} onPress={handleZoomReset} hitSlop={4}>
+            <Ionicons name="refresh-outline" size={11} color="#0A8A3A" />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {/* Interactive Chart */}
+      <GestureDetector gesture={composedGesture}>
+        <Animated.View
+          style={[
+            styles.chartInteractionContainer,
+            chartInteractionContainerStyle,
+            Platform.select({ web: { touchAction: "none" } as object }),
+          ]}
+        >
+          <ScrollView
+            ref={scrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            bounces
+            scrollEnabled={!isInteracting}
+            contentContainerStyle={{ paddingVertical: 4 }}
+          >
+            <Svg width={svgWidth} height={height}>
+              {/* Gridlines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+                const y = CHART_PAD_T + pct * plotH;
+                const priceVal = max - pct * priceRange;
+                return (
+                  <React.Fragment key={`grid-${i}`}>
+                    <Line
+                      x1={CHART_PAD_L}
+                      y1={y}
+                      x2={svgWidth - CHART_PAD_R}
+                      y2={y}
+                      stroke="#E5E7EB"
+                      strokeWidth={1}
+                      strokeDasharray="4 4"
+                    />
+                    <SvgText
+                      x={CHART_PAD_L - 6}
+                      y={y + 3}
+                      fill="#9AA6AF"
+                      fontSize="9"
+                      fontWeight="600"
+                      textAnchor="end"
+                    >
+                      {priceVal.toFixed(priceVal >= 100 ? 0 : 1)}
+                    </SvgText>
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Area fill */}
+              {areaPath ? <Path d={areaPath} fill="url(#trendAreaFill)" /> : null}
+              {/* Line */}
+              {linePath ? (
+                <Path
+                  d={linePath}
+                  fill="none"
+                  stroke="#1db954"
+                  strokeWidth={2.5}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              ) : null}
+
+              {/* Active crosshair / point */}
+              {activeIdx != null && chartSeries[activeIdx] ? (
+                <>
+                  <Line
+                    x1={xAt(activeIdx)}
+                    y1={CHART_PAD_T}
+                    x2={xAt(activeIdx)}
+                    y2={CHART_PAD_T + plotH}
+                    stroke="#9CA3AF"
+                    strokeWidth={1}
+                    strokeDasharray="4 4"
+                  />
+                  <Circle
+                    cx={xAt(activeIdx)}
+                    cy={yAt(chartSeries[activeIdx].value)}
+                    r={4.5}
+                    fill="#1db954"
+                    stroke="#FFFFFF"
+                    strokeWidth={2}
+                  />
+                </>
+              ) : null}
+
+              {/* X-axis ticks */}
+              {xTicks.map((idx) => (
+                <SvgText
+                  key={`xtick-${idx}`}
+                  x={xAt(idx)}
+                  y={height - 8}
+                  fill="#9AA6AF"
+                  fontSize="9"
+                  fontWeight="600"
+                  textAnchor="middle"
                 >
-                  <Svg width={svgWidth} height={height}>
-                    {/* Gridlines */}
-                    {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-                      const y = CHART_PAD_T + pct * plotH;
-                      const priceVal = max - pct * priceRange;
-                      return (
-                        <React.Fragment key={`grid-${i}`}>
-                          <Line
-                            x1={CHART_PAD_L}
-                            y1={y}
-                            x2={svgWidth - CHART_PAD_R}
-                            y2={y}
-                            stroke="#E5E7EB"
-                            strokeWidth={1}
-                            strokeDasharray="4 4"
-                          />
-                          <SvgText
-                            x={CHART_PAD_L - 6}
-                            y={y + 3}
-                            fill="#9AA6AF"
-                            fontSize="9"
-                            fontWeight="600"
-                            textAnchor="end"
-                          >
-                            {priceVal.toFixed(priceVal >= 100 ? 0 : 1)}
-                          </SvgText>
-                        </React.Fragment>
-                      );
-                    })}
+                  {shortLabel(chartSeries[idx].time, range)}
+                </SvgText>
+              ))}
+            </Svg>
+          </ScrollView>
 
-                    {/* Area fill */}
-                    {areaPath ? <Path d={areaPath} fill="url(#trendAreaFill)" /> : null}
-                    {/* Line */}
-                    {linePath ? (
-                      <Path
-                        d={linePath}
-                        fill="none"
-                        stroke="#1db954"
-                        strokeWidth={2.5}
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                      />
-                    ) : null}
-
-                    {/* Active crosshair / point */}
-                    {activeIdx != null && chartSeries[activeIdx] ? (
-                      <>
-                        <Line
-                          x1={xAt(activeIdx)}
-                          y1={CHART_PAD_T}
-                          x2={xAt(activeIdx)}
-                          y2={CHART_PAD_T + plotH}
-                          stroke="#9CA3AF"
-                          strokeWidth={1}
-                          strokeDasharray="4 4"
-                        />
-                        <Circle
-                          cx={xAt(activeIdx)}
-                          cy={yAt(chartSeries[activeIdx].value)}
-                          r={4.5}
-                          fill="#1db954"
-                          stroke="#FFFFFF"
-                          strokeWidth={2}
-                        />
-                      </>
-                    ) : null}
-
-                    {/* X-axis ticks */}
-                    {xTicks.map((idx) => (
-                      <SvgText
-                        key={`xtick-${idx}`}
-                        x={xAt(idx)}
-                        y={height - 8}
-                        fill="#9AA6AF"
-                        fontSize="9"
-                        fontWeight="600"
-                        textAnchor="middle"
-                      >
-                        {shortLabel(chartSeries[idx].time, range)}
-                      </SvgText>
-                    ))}
-                  </Svg>
-                </ScrollView>
-
-                {/* Tooltip */}
-                {active ? (
-                  <View style={[styles.chartTooltip, { left: tooltipLeft }]}>
-                    <Text style={styles.chartTooltipDate}>{formatDateShort(active.time)}</Text>
-                    <Text style={styles.chartTooltipPrice}>AED {active.value.toFixed(2)}</Text>
-                  </View>
-                ) : null}
-              </Animated.View>
-            </GestureDetector>
-          </>
-      )}
+          {/* Tooltip */}
+          {active ? (
+            <View style={[styles.chartTooltip, { left: tooltipLeft }]}>
+              <Text style={styles.chartTooltipDate}>{formatDateShort(active.time)}</Text>
+              <Text style={styles.chartTooltipPrice}>AED {active.value.toFixed(2)}</Text>
+            </View>
+          ) : null}
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
