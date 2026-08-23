@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  stickyTitle: { fontSize: 18, fontWeight: "900", color: TEXT },
+  stickyTitle: { fontSize: 18, fontWeight: "600", color: TEXT },
   stickyIconRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: "800",
+    fontWeight: "600",
     color: TEXT,
     minHeight: 36,
   },
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   mobileProductName: {
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: "800",
+    fontWeight: "600",
     color: TEXT,
   },
   mobilePackaging: { fontSize: 10, color: MUTED, fontWeight: "500" },

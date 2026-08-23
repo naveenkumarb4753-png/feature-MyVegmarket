@@ -148,7 +148,7 @@ export default function CategoriesScreen() {
           accessibilityLabel="Search"
         >
           <View style={styles.searchBtnInner}>
-            <Ionicons name="search-outline" size={20} color={BRAND.primary} />
+            <Ionicons name="search-outline" size={18} color="#111827" />
           </View>
         </Pressable>
       </View>
@@ -191,11 +191,6 @@ export default function CategoriesScreen() {
               </View>
               <Text style={styles.cardSub}>{cat.subtitle}</Text>
             </View>
-
-            {/* Arrow */}
-            <View style={[styles.arrowWrap, { backgroundColor: cat.bgColor }]}>
-              <Ionicons name="chevron-forward" size={18} color={cat.accentColor} />
-            </View>
           </Pressable>
         ))}
       </ScrollView>
@@ -230,14 +225,16 @@ const styles = StyleSheet.create({
   searchBtnInner: {
     width: 36,
     height: 36,
-    borderRadius: 12,
-    backgroundColor: BRAND.primaryLight,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#111827",
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     fontSize: 17,
-    fontWeight: "900",
+    fontWeight: "600",
     color: BRAND.text,
     letterSpacing: -0.3,
   },
@@ -285,15 +282,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    margin: 12,
-    borderRadius: 14,
   },
   thumb: { width: "100%", height: "100%" },
-  copy: { flex: 1, paddingVertical: 14, paddingRight: 8 },
+  copy: { flex: 1, paddingVertical: 14, paddingLeft: 12, paddingRight: 12 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "600",
     color: BRAND.text,
     letterSpacing: -0.2,
   },
@@ -313,13 +308,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: BRAND.muted,
     fontWeight: "500",
-  },
-  arrowWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
   },
 });

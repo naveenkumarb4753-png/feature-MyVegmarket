@@ -72,29 +72,32 @@ let globalSearchIndex = 0;
 const HERO_BANNERS = [
   {
     key: "b1",
+    tag: "FRESH SHIPMENTS",
     title: "Fresh Produce\nShipments",
-    sub: "Connect Buyers & Importers",
-    cta: "Post Your Shipment",
+    sub: "Connect directly with verified exporters & importers",
+    cta: "Post Shipment",
     image: HD_IMAGES.hero,
-    gradient: ["#0A8A3A", "#064F22"] as [string, string],
+    bg: "#0A8A3A",
     action: "postAd" as const,
   },
   {
     key: "b2",
-    title: "Al Aweer\nMarket Prices",
-    sub: "Live daily rates from Dubai's wholesale hub",
-    cta: "View Today's Prices",
+    tag: "AL AWEER MARKET",
+    title: "Al Aweer\nMarket Rates",
+    sub: "Live wholesale prices updated daily from Dubai hub",
+    cta: "View Rates",
     image: HD_IMAGES.tomatoes,
-    gradient: ["#1D4ED8", "#1E40AF"] as [string, string],
+    bg: "#1D4ED8",
     action: "prices" as const,
   },
   {
     key: "b3",
-    title: "Browse Fresh\nFruit Shipments",
-    sub: "New containers arriving weekly",
+    tag: "LIVE CONTAINERS",
+    title: "Browse Live\nContainers",
+    sub: "Explore refrigerated shipments arriving weekly",
     cta: "Browse Ads",
     image: HD_IMAGES.grapes,
-    gradient: ["#D97706", "#B45309"] as [string, string],
+    bg: "#D97706",
     action: "containers" as const,
   },
 ];
@@ -110,20 +113,18 @@ function HeroBannerCarousel({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bannerWidth = SCREEN_W - 32;
 
   useEffect(() => {
-    timerRef.current = setInterval(() => {
+    const timer = setInterval(() => {
       setActiveIndex((prev) => {
         const next = (prev + 1) % HERO_BANNERS.length;
         flatListRef.current?.scrollToIndex({ index: next, animated: true });
         return next;
       });
     }, 4500);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+
+    return () => clearInterval(timer);
   }, []);
 
   const handleAction = (action: "postAd" | "prices" | "containers") => {
@@ -133,28 +134,34 @@ function HeroBannerCarousel({
   };
 
   const renderBanner = ({ item: banner }: { item: (typeof HERO_BANNERS)[0] }) => (
-    <View style={[heroStyles.card, { backgroundColor: banner.gradient[0], width: bannerWidth }]}>
-      <View style={heroStyles.cardCopy}>
-        <View style={heroStyles.livePill}>
-          <View style={heroStyles.liveDot} />
-          <Text style={heroStyles.liveText}>LIVE</Text>
+    <View style={[heroStyles.cardWrapper, { width: bannerWidth }]}>
+      <View style={[heroStyles.card, { backgroundColor: banner.bg }]}>
+        <View style={heroStyles.cardCopy}>
+          <View style={heroStyles.livePill}>
+            <View style={heroStyles.liveDot} />
+            <Text style={heroStyles.liveText}>{banner.tag}</Text>
+          </View>
+          <Text style={heroStyles.cardTitle}>{banner.title}</Text>
+          <Text style={heroStyles.cardSub} numberOfLines={2}>{banner.sub}</Text>
+          <AnimatedPressable
+            style={heroStyles.cardCta}
+            onPress={() => handleAction(banner.action)}
+            haptic
+          >
+            <Text style={[heroStyles.cardCtaText, { color: banner.bg }]}>{banner.cta}</Text>
+            <Ionicons name="arrow-forward" size={13} color={banner.bg} />
+          </AnimatedPressable>
         </View>
-        <Text style={heroStyles.cardTitle}>{banner.title}</Text>
-        <Text style={heroStyles.cardSub}>{banner.sub}</Text>
-        <AnimatedPressable
-          style={heroStyles.cardCta}
-          onPress={() => handleAction(banner.action)}
-        >
-          <Text style={heroStyles.cardCtaText}>{banner.cta}</Text>
-          <Ionicons name="arrow-forward" size={14} color={banner.gradient[0]} />
-        </AnimatedPressable>
+        <View style={heroStyles.cardImageWrap}>
+          <ProduceImage
+            title={banner.title}
+            category="vegetables"
+            imageUrl={banner.image}
+            style={heroStyles.cardImage}
+            contentFit="cover"
+          />
+        </View>
       </View>
-      <ProduceImage
-        title={banner.title}
-        category="vegetables"
-        imageUrl={banner.image}
-        style={heroStyles.cardImage}
-      />
     </View>
   );
 
@@ -177,12 +184,17 @@ function HeroBannerCarousel({
             setActiveIndex(idx);
           }
         }}
+        onScrollToIndexFailed={(info) => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
+          }, 80);
+        }}
         getItemLayout={(_: any, index: number) => ({
           length: bannerWidth,
           offset: bannerWidth * index,
           index,
         })}
-        style={{ width: bannerWidth }}
+        style={[heroStyles.flatList, { width: bannerWidth }]}
       />
 
       {/* Dot indicators */}
@@ -209,34 +221,53 @@ function HeroBannerCarousel({
 }
 
 const heroStyles = StyleSheet.create({
-  wrap: { marginBottom: 20 },
-  card: {
-    width: SCREEN_W - 32,
-    borderRadius: 22,
+  wrap: {
+    marginBottom: 22,
+    borderRadius: 20,
     overflow: "hidden",
-    minHeight: 178,
+  },
+  flatList: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  cardWrapper: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  card: {
+    width: "100%",
+    height: 180,
+    borderRadius: 20,
+    overflow: "hidden",
     flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
     shadowColor: BRAND.shadow,
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
   },
   cardCopy: {
     flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    gap: 8,
+    paddingTop: 18,
+    paddingBottom: 18,
+    paddingLeft: 18,
+    paddingRight: 8,
+    justifyContent: "space-between",
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    overflow: "hidden",
   },
   livePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.2)",
     alignSelf: "flex-start",
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
   },
   liveDot: {
     width: 6,
@@ -246,26 +277,24 @@ const heroStyles = StyleSheet.create({
   },
   liveText: {
     color: "#FFFFFF",
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: "900",
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
   },
   cardTitle: {
     color: "#FFFFFF",
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "900",
-    lineHeight: 29,
-    letterSpacing: -0.5,
+    lineHeight: 26,
+    letterSpacing: -0.4,
   },
   cardSub: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 17,
-    maxWidth: 180,
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 11.5,
+    fontWeight: "500",
+    lineHeight: 16,
   },
   cardCta: {
-    marginTop: 2,
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
@@ -273,22 +302,31 @@ const heroStyles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
   },
   cardCtaText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: "900",
-    color: BRAND.primaryDark,
+  },
+  cardImageWrap: {
+    width: 126,
+    height: 180,
+    overflow: "hidden",
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
   },
   cardImage: {
-    width: 124,
-    height: "100%",
+    width: 126,
+    height: 180,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: "hidden",
   },
   dots: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    marginTop: 10,
+    marginTop: 12,
   },
   dot: {
     width: 6,
@@ -297,17 +335,20 @@ const heroStyles = StyleSheet.create({
     backgroundColor: BRAND.border,
   },
   dotActive: {
-    width: 20,
+    width: 22,
     backgroundColor: BRAND.primary,
   },
 });
 
 // ─── Category Row ─────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { key: "Fruits",     icon: "nutrition-outline" as const,  image: HD_IMAGES.fruits,     color: "#EA580C" },
-  { key: "Vegetables", icon: "leaf-outline" as const,        image: HD_IMAGES.vegetables, color: "#059669" },
-  { key: "Spices",     icon: "flame-outline" as const,       image: HD_IMAGES.spices,     color: "#DC2626" },
-  { key: "More",       icon: "grid-outline" as const,        image: null,                  color: BRAND.primary },
+  { key: "Fruits",          image: HD_IMAGES.fruits },
+  { key: "Vegetables",      image: HD_IMAGES.vegetables },
+  { key: "Spices",          image: HD_IMAGES.spices },
+  { key: "Nuts & Dry Fruits", image: HD_IMAGES.nuts },
+  { key: "Fresh Herbs",     image: HD_IMAGES.herbs },
+  { key: "Eggs",            image: HD_IMAGES.eggs },
+  { key: "Oils & Fats",     image: HD_IMAGES.oils },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -442,7 +483,7 @@ export default function HomePage() {
           <View style={st.headerRight}>
             {session.isLoggedIn ? (
               <AnimatedPressable style={st.iconBtn} onPress={() => session.setWishlistOpen(true)} haptic>
-                <Ionicons name="heart-outline" size={22} color={GREEN} />
+                <Ionicons name="heart-outline" size={22} color="#111827" />
                 {session.wishlist.length > 0 ? (
                   <View style={st.heartBadge}>
                     <Text style={st.heartBadgeText}>{session.wishlist.length}</Text>
@@ -451,7 +492,7 @@ export default function HomePage() {
               </AnimatedPressable>
             ) : null}
             <AnimatedPressable style={st.iconBtn} onPress={() => router.push("/inquiry-box" as Href)} haptic>
-              <Ionicons name="notifications-outline" size={22} color={BRAND.text} />
+              <Ionicons name="notifications-outline" size={22} color="#111827" />
               <View style={st.notifDot} />
             </AnimatedPressable>
           </View>
@@ -471,38 +512,38 @@ export default function HomePage() {
 
         {/* ── Categories ── */}
         <View style={st.sectionHead}>
-          <Text style={st.sectionTitle}>Shop by Category</Text>
+          <Text style={st.sectionTitle}>View by Category</Text>
           <Pressable onPress={() => router.push("/categories" as Href)}>
-            <Text style={st.viewAll}>See all →</Text>
+            <Text style={st.viewAll}>View All →</Text>
           </Pressable>
         </View>
-        <View style={st.catRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={st.catRow}
+        >
           {CATEGORIES.map((cat) => (
             <AnimatedPressable
               key={cat.key}
-              style={st.catCard}
-              onPress={() => {
-                if (cat.key === "More") { router.push("/categories" as Href); return; }
-                router.push(`/search?q=${encodeURIComponent(cat.key)}` as Href);
-              }}
+              style={st.catItem}
+              onPress={() => router.push(`/search?q=${encodeURIComponent(cat.key)}` as Href)}
               haptic
             >
-              <View style={[st.catIcon, { backgroundColor: cat.color + "18" }]}>
-                {cat.key === "More" ? (
-                  <Ionicons name={cat.icon} size={24} color={cat.color} />
-                ) : (
-                  <ProduceImage
-                    title={cat.key}
-                    category={cat.key}
-                    imageUrl={cat.image}
-                    style={st.catImage}
-                  />
-                )}
+              <View style={st.catCard}>
+                <ProduceImage
+                  title={cat.key}
+                  category={cat.key}
+                  imageUrl={cat.image}
+                  style={st.catImage}
+                  contentFit="cover"
+                />
               </View>
-              <Text style={[st.catLabel, { color: cat.color }]}>{cat.key}</Text>
+              <Text style={st.catLabel} numberOfLines={2}>
+                {cat.key}
+              </Text>
             </AnimatedPressable>
           ))}
-        </View>
+        </ScrollView>
 
         {/* ── Al Aweer Prices ── */}
         <View style={st.sectionHead}>
@@ -599,7 +640,7 @@ export default function HomePage() {
                     <Ionicons
                       name={wishlisted ? "heart" : "heart-outline"}
                       size={15}
-                      color={wishlisted ? "#E11D48" : GREEN}
+                      color={wishlisted ? "#E11D48" : "#111827"}
                     />
                   </AnimatedPressable>
                 ) : null}
@@ -677,9 +718,9 @@ const st = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: BRAND.borderLight,
+    borderColor: "#111827",
   },
   heartBadge: {
     position: "absolute",
@@ -739,59 +780,61 @@ const st = StyleSheet.create({
     alignItems: "center",
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "900", color: BRAND.text, letterSpacing: -0.3 },
+  sectionTitle: { fontSize: 18, fontWeight: "600", color: BRAND.text, letterSpacing: -0.3 },
   viewAll: { color: GREEN, fontWeight: "800", fontSize: 13 },
 
   // Categories
-  catRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
-  catCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+  catRow: { gap: 12, paddingRight: 16, marginBottom: 24 },
+  catItem: {
+    width: 96,
     alignItems: "center",
-    paddingVertical: 14,
-    gap: 8,
+  },
+  catCard: {
+    width: 96,
+    height: 72,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: BRAND.borderLight,
     ...CARD_SHADOW,
   },
-  catIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
+  catImage: { width: 96, height: 72 },
+  catLabel: {
+    fontSize: 11.5,
+    fontWeight: "600",
+    color: BRAND.text,
+    textAlign: "center",
+    marginTop: 7,
+    lineHeight: 15,
   },
-  catImage: { width: 50, height: 50 },
-  catLabel: { fontSize: 11, fontWeight: "800", textAlign: "center" },
 
   // Price cards
   priceCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 12,
+    borderRadius: 16,
     marginBottom: 10,
-    gap: 12,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: BRAND.borderLight,
+    paddingRight: 14,
     ...CARD_SHADOW,
   },
-  priceImage: { width: 60, height: 60, borderRadius: 14, backgroundColor: BRAND.primaryLight },
-  priceBody: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: BRAND.text },
+  priceImage: { width: 76, height: 82, backgroundColor: BRAND.primaryLight },
+  priceBody: { flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 8 },
+  cardTitle: { fontSize: 14, fontWeight: "600", color: BRAND.text },
   priceRange: { marginTop: 3, fontSize: 13, fontWeight: "900", color: GREEN },
   priceMeta: { marginTop: 2, fontSize: 11, color: BRAND.muted, fontWeight: "600" },
   trendBadge: {
     backgroundColor: BRAND.success,
     borderRadius: 999,
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 5,
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: 4,
   },
   trendBadgeDown: { backgroundColor: BRAND.danger },
   trendText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" },
@@ -800,17 +843,16 @@ const st = StyleSheet.create({
   adCard: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 12,
+    borderRadius: 16,
     marginBottom: 12,
-    gap: 12,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: BRAND.borderLight,
     ...CARD_SHADOW,
   },
-  adImageWrap: { width: 100, height: 112, borderRadius: 14, overflow: "hidden", backgroundColor: BRAND.primaryLight },
-  adImage: { width: 100, height: 112 },
-  adBody: { flex: 1, justifyContent: "center" },
+  adImageWrap: { width: 110, height: 130, overflow: "hidden", backgroundColor: BRAND.primaryLight },
+  adImage: { width: 110, height: 130 },
+  adBody: { flex: 1, justifyContent: "center", padding: 12 },
   meta: { marginTop: 2, fontSize: 12, color: BRAND.muted, fontWeight: "600" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   adPrice: { marginTop: 8, fontSize: 13, fontWeight: "900", color: GREEN },
@@ -832,12 +874,14 @@ const st = StyleSheet.create({
     position: "absolute",
     top: 6,
     right: 6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 999,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#111827",
     ...CARD_SHADOW,
   },
 });

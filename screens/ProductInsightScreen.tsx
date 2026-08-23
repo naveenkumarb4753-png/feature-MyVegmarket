@@ -326,11 +326,6 @@ export default function ProductInsightScreen() {
       ? `${formatDubaiDate(stats.from)} – ${formatDubaiDate(stats.to)}`
       : "Price history will appear here";
 
-  const comparisonLabel =
-    stats.changePercent != null
-      ? `${stats.changePercent > 0 ? "+" : ""}${stats.changePercent.toFixed(1)}% vs previous`
-      : "No comparison yet";
-
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView
@@ -426,18 +421,10 @@ export default function ProductInsightScreen() {
                   </Text>
                 </View>
               </View>
-              <View style={styles.comparisonChip}>
-                <Text style={styles.comparisonText}>{comparisonLabel}</Text>
-              </View>
             </View>
 
             {/* Hero actions */}
             <View style={styles.heroButtonRow}>
-              <PrimaryButton
-                icon="trending-up-outline"
-                label="View Price Trend"
-                onPress={() => setOverlayVisible(true)}
-              />
               <PrimaryButton
                 icon="chatbubble-ellipses-outline"
                 label="WhatsApp Enquiry"
@@ -488,21 +475,21 @@ export default function ProductInsightScreen() {
           </View>
 
           <View style={styles.overviewBottomRow}>
-            <View style={styles.overviewBottomItem}>
+            <View style={styles.overviewBottomCard}>
               <View style={[styles.overviewIconCircle, { backgroundColor: ORANGE_SOFT }]}>
-                <Ionicons name="compass-outline" size={18} color={ORANGE} />
+                <Ionicons name="compass-outline" size={17} color={ORANGE} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.statLabel}>Total Updates</Text>
+              <View style={styles.overviewTextBlock}>
+                <Text style={styles.overviewMetaLabel}>Total Updates</Text>
                 <Text style={styles.overviewBigValue}>{stats.updates}</Text>
               </View>
             </View>
-            <View style={[styles.overviewBottomItem, { marginTop: 10 }]}>
+            <View style={styles.overviewBottomCard}>
               <View style={[styles.overviewIconCircle, { backgroundColor: GREEN_SOFT }]}>
-                <Ionicons name="calendar-outline" size={18} color={GREEN} />
+                <Ionicons name="calendar-outline" size={17} color={GREEN} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.statLabel}>Visible Period</Text>
+              <View style={styles.overviewTextBlock}>
+                <Text style={styles.overviewMetaLabel}>Visible Period</Text>
                 <Text style={styles.overviewPeriodValue} numberOfLines={1}>
                   {visiblePeriod}
                 </Text>
@@ -714,7 +701,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   heroImageCard: {
-    minHeight: 300,
+    minHeight: 270,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: INNER_BORDER,
@@ -747,8 +734,8 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
-  heroImageInner: { minHeight: 300, padding: 28, alignItems: "center", justifyContent: "center" },
-  heroImage: { width: "100%", height: 230 },
+  heroImageInner: { minHeight: 270, padding: 16, alignItems: "center", justifyContent: "center" },
+  heroImage: { width: "100%", maxWidth: 320, height: 238, alignSelf: "center" },
   heroInfoCol: { marginTop: 16, paddingHorizontal: 2 },
   heroTitle: { fontSize: 32, lineHeight: 36, fontWeight: "900", letterSpacing: -1.2, color: INK },
   verifiedRow: {
@@ -769,12 +756,12 @@ const styles = StyleSheet.create({
   infoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    columnGap: 22,
-    rowGap: 12,
+    justifyContent: "space-between",
+    rowGap: 14,
     marginTop: 20,
   },
-  infoItem: { flexDirection: "row", alignItems: "center", gap: 7 },
-  infoText: { fontSize: 13, fontWeight: "400", color: BODY },
+  infoItem: { flexDirection: "row", alignItems: "center", gap: 7, width: "48%", minWidth: 0 },
+  infoText: { fontSize: 13, fontWeight: "400", color: BODY, flexShrink: 1 },
   infoLabel: { fontWeight: "700", color: INK },
 
   /* Rate card */
@@ -784,16 +771,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: RATE_BORDER,
     backgroundColor: "#fbfdfb",
-    padding: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    alignSelf: "flex-start",
   },
   rateTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 14,
-    flexWrap: "wrap",
+    gap: 10,
   },
-  rateMainBlock: { flex: 1, minWidth: 150 },
+  rateMainBlock: { flex: 0, minWidth: 120 },
   rateLabel: {
     fontSize: 11,
     fontWeight: "900",
@@ -803,7 +791,7 @@ const styles = StyleSheet.create({
   },
   rateValue: {
     marginTop: 4,
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: "900",
     letterSpacing: -0.8,
     color: GREEN,
@@ -811,19 +799,11 @@ const styles = StyleSheet.create({
   rateUpdatedBlock: {
     borderLeftWidth: 1,
     borderLeftColor: INNER_BORDER,
-    paddingLeft: 14,
+    paddingLeft: 10,
+    marginLeft: 2,
   },
   rateUpdatedLabel: { fontSize: 12, fontWeight: "700", color: SUB },
   rateUpdatedValue: { marginTop: 4, fontSize: 13, fontWeight: "900", color: INK },
-  comparisonChip: {
-    marginTop: 14,
-    borderRadius: 16,
-    backgroundColor: "#f4f7f5",
-    paddingHorizontal: 18,
-    paddingVertical: 13,
-    alignSelf: "flex-start",
-  },
-  comparisonText: { fontSize: 13, fontWeight: "900", color: SUB },
 
   /* Buttons */
   heroButtonRow: { flexDirection: "row", gap: 12, marginTop: 20 },
@@ -913,45 +893,78 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 19, fontWeight: "900", color: INK },
   sectionTitleSuffix: { fontSize: 14, fontWeight: "500", color: SUB, marginTop: 3 },
 
-  /* Stats grid */
-  statGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  /* Stats grid — two rows of three compact bubbles */
+  statGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   statCard: {
-    width: "48.3%",
+    width: "31.5%",
     flexGrow: 1,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: INNER_BORDER,
     backgroundColor: "#fcfdfc",
-    padding: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
   },
   statLabel: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontWeight: "900",
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
     color: SUB,
+    textAlign: "center",
   },
-  statValue: { marginTop: 8, fontSize: 17, fontWeight: "900", color: INK },
-  overviewBottomRow: { marginTop: 10 },
-  overviewBottomItem: {
+  statValue: { marginTop: 5, fontSize: 14, fontWeight: "900", color: INK },
+  overviewBottomRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  overviewBottomCard: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    borderRadius: 16,
+    gap: 10,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: INNER_BORDER,
     backgroundColor: "#fcfdfc",
-    padding: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
   },
   overviewIconCircle: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
-  overviewBigValue: { marginTop: 3, fontSize: 17, fontWeight: "900", color: INK },
-  overviewPeriodValue: { marginTop: 3, fontSize: 14, fontWeight: "900", color: INK },
+  overviewTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  overviewMetaLabel: {
+    fontSize: 9,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    color: SUB,
+    textAlign: "left",
+  },
+  overviewBigValue: {
+    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "900",
+    color: INK,
+    textAlign: "left",
+  },
+  overviewPeriodValue: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "900",
+    color: INK,
+    textAlign: "left",
+  },
 
   /* Preview */
   previewHeaderRow: {
