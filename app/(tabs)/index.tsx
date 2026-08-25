@@ -1,33 +1,26 @@
-import { supabase } from "@/lib/supabase";
-import { useAppSession } from "@/lib/appSession";
-import GlobalSearchBar from "@/components/GlobalSearchBar";
 import AnimatedPressable from "@/components/AnimatedPressable";
+import GlobalSearchBar from "@/components/GlobalSearchBar";
 import ProduceImage from "@/components/ProduceImage";
+import { BRAND } from "@/constants/colors";
+import { useAppSession } from "@/lib/appSession";
 import {
   GREEN,
   HD_IMAGES,
   PAGE_BG,
-  formatPrice,
-  formatKgRange,
-  produceImage,
-  countryFlag,
-  isNewListing,
   containerLabel,
+  countryFlag,
+  formatKgRange,
+  formatPrice,
+  isNewListing,
 } from "@/lib/produceUi";
-import { BRAND } from "@/constants/colors";
+import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
   FlatList,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -72,32 +65,29 @@ let globalSearchIndex = 0;
 const HERO_BANNERS = [
   {
     key: "b1",
-    tag: "FRESH SHIPMENTS",
     title: "Fresh Produce\nShipments",
-    sub: "Connect directly with verified exporters & importers",
-    cta: "Post Shipment",
+    sub: "Connect Buyers & Importers",
+    cta: "Post Your Shipment",
     image: HD_IMAGES.hero,
-    bg: "#0A8A3A",
+    gradient: ["#0A8A3A", "#064F22"] as [string, string],
     action: "postAd" as const,
   },
   {
     key: "b2",
-    tag: "AL AWEER MARKET",
-    title: "Al Aweer\nMarket Rates",
-    sub: "Live wholesale prices updated daily from Dubai hub",
-    cta: "View Rates",
+    title: "Al Aweer\nMarket Prices",
+    sub: "Live daily rates from Dubai's wholesale hub",
+    cta: "View Today's Prices",
     image: HD_IMAGES.tomatoes,
-    bg: "#1D4ED8",
+    gradient: ["#1D4ED8", "#1E40AF"] as [string, string],
     action: "prices" as const,
   },
   {
     key: "b3",
-    tag: "LIVE CONTAINERS",
-    title: "Browse Live\nContainers",
-    sub: "Explore refrigerated shipments arriving weekly",
+    title: "Browse Fresh\nFruit Shipments",
+    sub: "New containers arriving weekly",
     cta: "Browse Ads",
     image: HD_IMAGES.grapes,
-    bg: "#D97706",
+    gradient: ["#D97706", "#B45309"] as [string, string],
     action: "containers" as const,
   },
 ];
@@ -113,18 +103,20 @@ function HeroBannerCarousel({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bannerWidth = SCREEN_W - 32;
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setActiveIndex((prev) => {
         const next = (prev + 1) % HERO_BANNERS.length;
         flatListRef.current?.scrollToIndex({ index: next, animated: true });
         return next;
       });
     }, 4500);
-
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   const handleAction = (action: "postAd" | "prices" | "containers") => {
@@ -133,35 +125,38 @@ function HeroBannerCarousel({
     else onContainers();
   };
 
-  const renderBanner = ({ item: banner }: { item: (typeof HERO_BANNERS)[0] }) => (
-    <View style={[heroStyles.cardWrapper, { width: bannerWidth }]}>
-      <View style={[heroStyles.card, { backgroundColor: banner.bg }]}>
-        <View style={heroStyles.cardCopy}>
-          <View style={heroStyles.livePill}>
-            <View style={heroStyles.liveDot} />
-            <Text style={heroStyles.liveText}>{banner.tag}</Text>
-          </View>
-          <Text style={heroStyles.cardTitle}>{banner.title}</Text>
-          <Text style={heroStyles.cardSub} numberOfLines={2}>{banner.sub}</Text>
-          <AnimatedPressable
-            style={heroStyles.cardCta}
-            onPress={() => handleAction(banner.action)}
-            haptic
-          >
-            <Text style={[heroStyles.cardCtaText, { color: banner.bg }]}>{banner.cta}</Text>
-            <Ionicons name="arrow-forward" size={13} color={banner.bg} />
-          </AnimatedPressable>
+  const renderBanner = ({
+    item: banner,
+  }: {
+    item: (typeof HERO_BANNERS)[0];
+  }) => (
+    <View
+      style={[
+        heroStyles.card,
+        { backgroundColor: banner.gradient[0], width: bannerWidth },
+      ]}
+    >
+      <View style={heroStyles.cardCopy}>
+        <View style={heroStyles.livePill}>
+          <View style={heroStyles.liveDot} />
+          <Text style={heroStyles.liveText}>LIVE</Text>
         </View>
-        <View style={heroStyles.cardImageWrap}>
-          <ProduceImage
-            title={banner.title}
-            category="vegetables"
-            imageUrl={banner.image}
-            style={heroStyles.cardImage}
-            contentFit="cover"
-          />
-        </View>
+        <Text style={heroStyles.cardTitle}>{banner.title}</Text>
+        <Text style={heroStyles.cardSub}>{banner.sub}</Text>
+        <AnimatedPressable
+          style={heroStyles.cardCta}
+          onPress={() => handleAction(banner.action)}
+        >
+          <Text style={heroStyles.cardCtaText}>{banner.cta}</Text>
+          <Ionicons name="arrow-forward" size={14} color={banner.gradient[0]} />
+        </AnimatedPressable>
       </View>
+      <ProduceImage
+        title={banner.title}
+        category="vegetables"
+        imageUrl={banner.image}
+        style={heroStyles.cardImage}
+      />
     </View>
   );
 
@@ -184,17 +179,12 @@ function HeroBannerCarousel({
             setActiveIndex(idx);
           }
         }}
-        onScrollToIndexFailed={(info) => {
-          setTimeout(() => {
-            flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
-          }, 80);
-        }}
         getItemLayout={(_: any, index: number) => ({
           length: bannerWidth,
           offset: bannerWidth * index,
           index,
         })}
-        style={[heroStyles.flatList, { width: bannerWidth }]}
+        style={{ width: bannerWidth }}
       />
 
       {/* Dot indicators */}
@@ -221,53 +211,34 @@ function HeroBannerCarousel({
 }
 
 const heroStyles = StyleSheet.create({
-  wrap: {
-    marginBottom: 22,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  flatList: {
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  cardWrapper: {
-    borderRadius: 20,
-    overflow: "hidden",
-  },
+  wrap: { marginBottom: 20 },
   card: {
-    width: "100%",
-    height: 180,
-    borderRadius: 20,
+    width: SCREEN_W - 32,
+    borderRadius: 22,
     overflow: "hidden",
+    minHeight: 178,
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
     shadowColor: BRAND.shadow,
-    shadowOpacity: 0.16,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 5,
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
   },
   cardCopy: {
     flex: 1,
-    paddingTop: 18,
-    paddingBottom: 18,
-    paddingLeft: 18,
-    paddingRight: 8,
-    justifyContent: "space-between",
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-    overflow: "hidden",
+    padding: 20,
+    justifyContent: "center",
+    gap: 8,
   },
   livePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignSelf: "flex-start",
     borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   liveDot: {
     width: 6,
@@ -277,24 +248,26 @@ const heroStyles = StyleSheet.create({
   },
   liveText: {
     color: "#FFFFFF",
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: "900",
-    letterSpacing: 1.1,
+    letterSpacing: 1.2,
   },
   cardTitle: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "900",
-    lineHeight: 26,
-    letterSpacing: -0.4,
+    lineHeight: 29,
+    letterSpacing: -0.5,
   },
   cardSub: {
-    color: "rgba(255,255,255,0.88)",
-    fontSize: 11.5,
-    fontWeight: "500",
-    lineHeight: 16,
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 17,
+    maxWidth: 180,
   },
   cardCta: {
+    marginTop: 2,
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
@@ -302,31 +275,22 @@ const heroStyles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingVertical: 8,
   },
   cardCtaText: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: "900",
-  },
-  cardImageWrap: {
-    width: 126,
-    height: 180,
-    overflow: "hidden",
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
+    color: BRAND.primaryDark,
   },
   cardImage: {
-    width: 126,
-    height: 180,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
-    overflow: "hidden",
+    width: 124,
+    height: "100%",
   },
   dots: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    marginTop: 12,
+    marginTop: 10,
   },
   dot: {
     width: 6,
@@ -335,20 +299,17 @@ const heroStyles = StyleSheet.create({
     backgroundColor: BRAND.border,
   },
   dotActive: {
-    width: 22,
+    width: 20,
     backgroundColor: BRAND.primary,
   },
 });
 
 // ─── Category Row ─────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { key: "Fruits",          image: HD_IMAGES.fruits },
-  { key: "Vegetables",      image: HD_IMAGES.vegetables },
-  { key: "Spices",          image: HD_IMAGES.spices },
-  { key: "Nuts & Dry Fruits", image: HD_IMAGES.nuts },
-  { key: "Fresh Herbs",     image: HD_IMAGES.herbs },
-  { key: "Eggs",            image: HD_IMAGES.eggs },
-  { key: "Oils & Fats",     image: HD_IMAGES.oils },
+  { key: "Fruits", image: HD_IMAGES.fruits, color: "#EA580C" },
+  { key: "Vegetables", image: HD_IMAGES.vegetables, color: "#059669" },
+  { key: "Spices", image: HD_IMAGES.spices, color: "#DC2626" },
+  { key: "More", image: null, color: BRAND.primary },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -365,13 +326,23 @@ export default function HomePage() {
   // Animated search placeholder loop
   useEffect(() => {
     timerRef.current = setInterval(() => {
-      Animated.timing(searchFade, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+      Animated.timing(searchFade, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => {
         globalSearchIndex = (globalSearchIndex + 1) % SEARCH_TEXTS.length;
         setSearchText(SEARCH_TEXTS[globalSearchIndex]);
-        Animated.timing(searchFade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+        Animated.timing(searchFade, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }).start();
       });
     }, 2800);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [searchFade]);
 
   const load = useCallback(async (isRefresh = false) => {
@@ -379,7 +350,9 @@ export default function HomePage() {
     try {
       const { data: products } = await supabase
         .from("products")
-        .select("id,name,image_url,market_price_aed,myveg_price_aed,updated_at,active")
+        .select(
+          "id,name,image_url,market_price_aed,myveg_price_aed,updated_at,active",
+        )
         .eq("active", true)
         .order("updated_at", { ascending: false })
         .limit(6);
@@ -393,12 +366,19 @@ export default function HomePage() {
         .gte("created_at", start.toISOString())
         .order("created_at", { ascending: true });
 
-      const grouped = new Map<string, { min: number; max: number; at: string | null }>();
+      const grouped = new Map<
+        string,
+        { min: number; max: number; at: string | null }
+      >();
       (updates || []).forEach((row: any) => {
         if (!row.published_product_id || row.price == null) return;
         const cur = grouped.get(row.published_product_id);
         if (!cur) {
-          grouped.set(row.published_product_id, { min: row.price, max: row.price, at: row.created_at });
+          grouped.set(row.published_product_id, {
+            min: row.price,
+            max: row.price,
+            at: row.created_at,
+          });
         } else {
           grouped.set(row.published_product_id, {
             min: Math.min(cur.min, row.price),
@@ -414,7 +394,8 @@ export default function HomePage() {
           const min = stats?.min ?? p.myveg_price_aed ?? p.market_price_aed;
           const max = stats?.max ?? p.market_price_aed ?? p.myveg_price_aed;
           let changePct = 0;
-          if (min && max && min > 0) changePct = Math.round(((max - min) / min) * 100);
+          if (min && max && min > 0)
+            changePct = Math.round(((max - min) / min) * 100);
           return {
             id: p.id,
             name: p.name,
@@ -424,13 +405,13 @@ export default function HomePage() {
             latest_updated_at: stats?.at ?? p.updated_at,
             changePct,
           };
-        })
+        }),
       );
 
       const { data: adsData } = await supabase
         .from("containers")
         .select(
-          "id,title,route_from,market_location,route_to,price,currency,container_type,qty,image_url,category,created_at"
+          "id,title,route_from,market_location,route_to,price,currency,container_type,qty,image_url,category,created_at",
         )
         .eq("is_active", true)
         .order("created_at", { ascending: false })
@@ -448,7 +429,7 @@ export default function HomePage() {
     useCallback(() => {
       load();
       session.refreshSession();
-    }, [load, session.refreshSession])
+    }, [load, session.refreshSession]),
   );
 
   function stopSearchLoop() {
@@ -470,7 +451,13 @@ export default function HomePage() {
       <ScrollView
         contentContainerStyle={st.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={GREEN} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => load(true)}
+            tintColor={GREEN}
+          />
+        }
       >
         {/* ── Header ── */}
         <View style={st.header}>
@@ -482,17 +469,31 @@ export default function HomePage() {
           </View>
           <View style={st.headerRight}>
             {session.isLoggedIn ? (
-              <AnimatedPressable style={st.iconBtn} onPress={() => session.setWishlistOpen(true)} haptic>
-                <Ionicons name="heart-outline" size={22} color="#111827" />
+              <AnimatedPressable
+                style={st.iconBtn}
+                onPress={() => session.setWishlistOpen(true)}
+                haptic
+              >
+                <Ionicons name="heart-outline" size={22} color={GREEN} />
                 {session.wishlist.length > 0 ? (
                   <View style={st.heartBadge}>
-                    <Text style={st.heartBadgeText}>{session.wishlist.length}</Text>
+                    <Text style={st.heartBadgeText}>
+                      {session.wishlist.length}
+                    </Text>
                   </View>
                 ) : null}
               </AnimatedPressable>
             ) : null}
-            <AnimatedPressable style={st.iconBtn} onPress={() => router.push("/inquiry-box" as Href)} haptic>
-              <Ionicons name="notifications-outline" size={22} color="#111827" />
+            <AnimatedPressable
+              style={st.iconBtn}
+              onPress={() => router.push("/inquiry-box" as Href)}
+              haptic
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={BRAND.text}
+              />
               <View style={st.notifDot} />
             </AnimatedPressable>
           </View>
@@ -514,7 +515,7 @@ export default function HomePage() {
         <View style={st.sectionHead}>
           <Text style={st.sectionTitle}>View by Category</Text>
           <Pressable onPress={() => router.push("/categories" as Href)}>
-            <Text style={st.viewAll}>View All →</Text>
+            <Text style={st.viewAll}>View all →</Text>
           </Pressable>
         </View>
         <ScrollView
@@ -525,20 +526,24 @@ export default function HomePage() {
           {CATEGORIES.map((cat) => (
             <AnimatedPressable
               key={cat.key}
-              style={st.catItem}
-              onPress={() => router.push(`/search?q=${encodeURIComponent(cat.key)}` as Href)}
+              style={st.catCard}
+              onPress={() =>
+                router.push(`/search?q=${encodeURIComponent(cat.key)}` as Href)
+              }
               haptic
             >
-              <View style={st.catCard}>
+              <View style={st.catIcon}>
                 <ProduceImage
                   title={cat.key}
                   category={cat.key}
                   imageUrl={cat.image}
                   style={st.catImage}
-                  contentFit="cover"
                 />
               </View>
-              <Text style={st.catLabel} numberOfLines={2}>
+              <Text
+                style={[st.catLabel, { color: cat.color }]}
+                numberOfLines={1}
+              >
                 {cat.key}
               </Text>
             </AnimatedPressable>
@@ -569,13 +574,26 @@ export default function HomePage() {
                 style={st.priceImage}
               />
               <View style={st.priceBody}>
-                <Text style={st.cardTitle} numberOfLines={1}>{item.name}</Text>
-                <Text style={st.priceRange}>{formatKgRange(item.min_price, item.max_price)}</Text>
-                <Text style={st.priceMeta}>Updated: {formatUpdated(item.latest_updated_at)}</Text>
+                <Text style={st.cardTitle} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={st.priceRange}>
+                  {formatKgRange(item.min_price, item.max_price)}
+                </Text>
+                <Text style={st.priceMeta}>
+                  Updated: {formatUpdated(item.latest_updated_at)}
+                </Text>
               </View>
               <View style={[st.trendBadge, !up && st.trendBadgeDown]}>
-                <Ionicons name={up ? "trending-up" : "trending-down"} size={12} color="#FFFFFF" />
-                <Text style={st.trendText}>{item.changePct > 0 ? "+" : ""}{item.changePct}%</Text>
+                <Ionicons
+                  name={up ? "trending-up" : "trending-down"}
+                  size={12}
+                  color="#FFFFFF"
+                />
+                <Text style={st.trendText}>
+                  {item.changePct > 0 ? "+" : ""}
+                  {item.changePct}%
+                </Text>
               </View>
             </AnimatedPressable>
           );
@@ -591,8 +609,11 @@ export default function HomePage() {
 
         {(ads.length ? ads : FALLBACK_ADS).slice(0, 4).map((item, index) => {
           const origin = item.route_from || "Peru";
-          const wishlisted = session.isLoggedIn && session.isWishlisted(item.id);
-          const showNew = item.created_at ? isNewListing(item.created_at) : false;
+          const wishlisted =
+            session.isLoggedIn && session.isWishlisted(item.id);
+          const showNew = item.created_at
+            ? isNewListing(item.created_at)
+            : false;
           const showFeatured = index === 0 || (!showNew && index < 2);
           return (
             <AnimatedPressable
@@ -632,7 +653,10 @@ export default function HomePage() {
                         location: item.market_location || item.route_to,
                         priceLabel: formatPrice(item.currency, item.price),
                         imageUrl: item.image_url,
-                        containerLabel: containerLabel(item.container_type, item.qty),
+                        containerLabel: containerLabel(
+                          item.container_type,
+                          item.qty,
+                        ),
                       })
                     }
                     haptic
@@ -640,25 +664,39 @@ export default function HomePage() {
                     <Ionicons
                       name={wishlisted ? "heart" : "heart-outline"}
                       size={15}
-                      color={wishlisted ? "#E11D48" : "#111827"}
+                      color={wishlisted ? "#E11D48" : GREEN}
                     />
                   </AnimatedPressable>
                 ) : null}
               </View>
               <View style={st.adBody}>
-                <Text style={st.cardTitle} numberOfLines={1}>{item.title || "Fresh Produce"}</Text>
+                <Text style={st.cardTitle} numberOfLines={1}>
+                  {item.title || "Fresh Produce"}
+                </Text>
                 <View style={st.metaRow}>
-                  <Text style={st.meta}>{countryFlag(origin)} {origin}</Text>
+                  <Text style={st.meta}>
+                    {countryFlag(origin)} {origin}
+                  </Text>
                 </View>
                 <View style={st.metaRow}>
                   <Ionicons name="cube-outline" size={13} color={BRAND.muted} />
-                  <Text style={st.meta}>{containerLabel(item.container_type, item.qty)}</Text>
+                  <Text style={st.meta}>
+                    {containerLabel(item.container_type, item.qty)}
+                  </Text>
                 </View>
                 <View style={st.metaRow}>
-                  <Ionicons name="location-outline" size={13} color={BRAND.muted} />
-                  <Text style={st.meta}>{item.market_location || item.route_to || "Dubai"}</Text>
+                  <Ionicons
+                    name="location-outline"
+                    size={13}
+                    color={BRAND.muted}
+                  />
+                  <Text style={st.meta}>
+                    {item.market_location || item.route_to || "Dubai"}
+                  </Text>
                 </View>
-                <Text style={st.adPrice}>{formatPrice(item.currency, item.price)} / Container</Text>
+                <Text style={st.adPrice}>
+                  {formatPrice(item.currency, item.price)} / Container
+                </Text>
               </View>
             </AnimatedPressable>
           );
@@ -670,15 +708,78 @@ export default function HomePage() {
 
 // ─── Fallback Data ────────────────────────────────────────────────────────────
 const FALLBACK_PRICES: PriceCard[] = [
-  { id: "tomato", name: "Tomato (Local)", image_url: HD_IMAGES.tomatoes, min_price: 2.5, max_price: 3.2, latest_updated_at: new Date().toISOString(), changePct: 8 },
-  { id: "grapes", name: "Green Grapes", image_url: HD_IMAGES.grapes, min_price: 5.8, max_price: 6.9, latest_updated_at: new Date().toISOString(), changePct: -3 },
-  { id: "apples", name: "Fresh Apples", image_url: HD_IMAGES.apples, min_price: 4.2, max_price: 5.0, latest_updated_at: new Date().toISOString(), changePct: 2 },
+  {
+    id: "tomato",
+    name: "Tomato (Local)",
+    image_url: HD_IMAGES.tomatoes,
+    min_price: 2.5,
+    max_price: 3.2,
+    latest_updated_at: new Date().toISOString(),
+    changePct: 8,
+  },
+  {
+    id: "grapes",
+    name: "Green Grapes",
+    image_url: HD_IMAGES.grapes,
+    min_price: 5.8,
+    max_price: 6.9,
+    latest_updated_at: new Date().toISOString(),
+    changePct: -3,
+  },
+  {
+    id: "apples",
+    name: "Fresh Apples",
+    image_url: HD_IMAGES.apples,
+    min_price: 4.2,
+    max_price: 5.0,
+    latest_updated_at: new Date().toISOString(),
+    changePct: 2,
+  },
 ];
 
 const FALLBACK_ADS: AdCard[] = [
-  { id: "grapes", title: "Fresh Green Grapes", route_from: "Peru", market_location: "Dubai", route_to: "Dubai", price: 12500, currency: "AED", container_type: "40ft Container", qty: 1, image_url: HD_IMAGES.grapes, category: "fruits", created_at: new Date().toISOString() },
-  { id: "oranges", title: "Fresh Oranges", route_from: "South Africa", market_location: "Dubai", route_to: "Dubai", price: 9800, currency: "AED", container_type: "40ft Container", qty: 1, image_url: HD_IMAGES.oranges, category: "fruits", created_at: new Date().toISOString() },
-  { id: "apples", title: "Fresh Red Apples", route_from: "Poland", market_location: "Dubai", route_to: "Dubai", price: 11200, currency: "AED", container_type: "40ft Container", qty: 1, image_url: HD_IMAGES.apples, category: "fruits", created_at: new Date().toISOString() },
+  {
+    id: "grapes",
+    title: "Fresh Green Grapes",
+    route_from: "Peru",
+    market_location: "Dubai",
+    route_to: "Dubai",
+    price: 12500,
+    currency: "AED",
+    container_type: "40ft Container",
+    qty: 1,
+    image_url: HD_IMAGES.grapes,
+    category: "fruits",
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "oranges",
+    title: "Fresh Oranges",
+    route_from: "South Africa",
+    market_location: "Dubai",
+    route_to: "Dubai",
+    price: 9800,
+    currency: "AED",
+    container_type: "40ft Container",
+    qty: 1,
+    image_url: HD_IMAGES.oranges,
+    category: "fruits",
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "apples",
+    title: "Fresh Red Apples",
+    route_from: "Poland",
+    market_location: "Dubai",
+    route_to: "Dubai",
+    price: 11200,
+    currency: "AED",
+    container_type: "40ft Container",
+    qty: 1,
+    image_url: HD_IMAGES.apples,
+    category: "fruits",
+    created_at: new Date().toISOString(),
+  },
 ];
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -718,9 +819,9 @@ const st = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#111827",
+    borderColor: BRAND.borderLight,
   },
   heartBadge: {
     position: "absolute",
@@ -763,7 +864,12 @@ const st = StyleSheet.create({
     marginBottom: 20,
     ...CARD_SHADOW,
   },
-  searchPlaceholder: { flex: 1, color: BRAND.muted, fontSize: 14, fontWeight: "500" },
+  searchPlaceholder: {
+    flex: 1,
+    color: BRAND.muted,
+    fontSize: 14,
+    fontWeight: "500",
+  },
   searchMic: {
     width: 30,
     height: 30,
@@ -780,33 +886,52 @@ const st = StyleSheet.create({
     alignItems: "center",
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "600", color: BRAND.text, letterSpacing: -0.3 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: BRAND.text,
+    letterSpacing: -0.3,
+  },
   viewAll: { color: GREEN, fontWeight: "800", fontSize: 13 },
 
   // Categories
-  catRow: { gap: 12, paddingRight: 16, marginBottom: 24 },
-  catItem: {
-    width: 96,
-    alignItems: "center",
+  catRow: {
+    gap: 12,
+    paddingRight: 16,
+    paddingBottom: 24,
   },
+
   catCard: {
-    width: 96,
-    height: 72,
+    width: 92,
+    minHeight: 118,
+    borderRadius: 20,
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
     borderWidth: 1,
     borderColor: BRAND.borderLight,
+    alignItems: "center",
+    paddingTop: 6,
+    paddingBottom: 10,
+    paddingHorizontal: 5,
     ...CARD_SHADOW,
   },
-  catImage: { width: 96, height: 72 },
+
+  catIcon: {
+    width: 78,
+    height: 78,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+
+  catImage: {
+    width: "100%",
+    height: "100%",
+  },
+
   catLabel: {
-    fontSize: 11.5,
-    fontWeight: "600",
-    color: BRAND.text,
-    textAlign: "center",
     marginTop: 7,
-    lineHeight: 15,
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
   },
 
   // Price cards
@@ -814,27 +939,37 @@ const st = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 18,
+    padding: 12,
     marginBottom: 10,
-    overflow: "hidden",
+    gap: 12,
     borderWidth: 1,
     borderColor: BRAND.borderLight,
-    paddingRight: 14,
     ...CARD_SHADOW,
   },
-  priceImage: { width: 76, height: 82, backgroundColor: BRAND.primaryLight },
-  priceBody: { flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 8 },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: BRAND.text },
+  priceImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: BRAND.primaryLight,
+  },
+  priceBody: { flex: 1 },
+  cardTitle: { fontSize: 14, fontWeight: "800", color: BRAND.text },
   priceRange: { marginTop: 3, fontSize: 13, fontWeight: "900", color: GREEN },
-  priceMeta: { marginTop: 2, fontSize: 11, color: BRAND.muted, fontWeight: "600" },
+  priceMeta: {
+    marginTop: 2,
+    fontSize: 11,
+    color: BRAND.muted,
+    fontWeight: "600",
+  },
   trendBadge: {
     backgroundColor: BRAND.success,
     borderRadius: 999,
-    paddingHorizontal: 9,
+    paddingHorizontal: 8,
     paddingVertical: 5,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 3,
   },
   trendBadgeDown: { backgroundColor: BRAND.danger },
   trendText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" },
@@ -843,16 +978,23 @@ const st = StyleSheet.create({
   adCard: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 18,
+    padding: 12,
     marginBottom: 12,
-    overflow: "hidden",
+    gap: 12,
     borderWidth: 1,
     borderColor: BRAND.borderLight,
     ...CARD_SHADOW,
   },
-  adImageWrap: { width: 110, height: 130, overflow: "hidden", backgroundColor: BRAND.primaryLight },
-  adImage: { width: 110, height: 130 },
-  adBody: { flex: 1, justifyContent: "center", padding: 12 },
+  adImageWrap: {
+    width: 100,
+    height: 112,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: BRAND.primaryLight,
+  },
+  adImage: { width: 100, height: 112 },
+  adBody: { flex: 1, justifyContent: "center" },
   meta: { marginTop: 2, fontSize: 12, color: BRAND.muted, fontWeight: "600" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   adPrice: { marginTop: 8, fontSize: 13, fontWeight: "900", color: GREEN },
@@ -874,14 +1016,12 @@ const st = StyleSheet.create({
     position: "absolute",
     top: 6,
     right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 999,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#111827",
     ...CARD_SHADOW,
   },
 });
