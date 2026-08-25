@@ -306,10 +306,13 @@ const heroStyles = StyleSheet.create({
 
 // ─── Category Row ─────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { key: "Fruits", image: HD_IMAGES.fruits, color: "#EA580C" },
-  { key: "Vegetables", image: HD_IMAGES.vegetables, color: "#059669" },
-  { key: "Spices", image: HD_IMAGES.spices, color: "#DC2626" },
-  { key: "More", image: null, color: BRAND.primary },
+  { key: "Fruits",          image: HD_IMAGES.fruits },
+  { key: "Vegetables",      image: HD_IMAGES.vegetables },
+  { key: "Spices",          image: HD_IMAGES.spices },
+  { key: "Nuts & Dry Fruits", image: HD_IMAGES.nuts },
+  { key: "Fresh Herbs",     image: HD_IMAGES.herbs },
+  { key: "Eggs",            image: HD_IMAGES.eggs },
+  { key: "Oils & Fats",     image: HD_IMAGES.oils },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -515,7 +518,7 @@ export default function HomePage() {
         <View style={st.sectionHead}>
           <Text style={st.sectionTitle}>View by Category</Text>
           <Pressable onPress={() => router.push("/categories" as Href)}>
-            <Text style={st.viewAll}>View all →</Text>
+            <Text style={st.viewAll}>View All →</Text>
           </Pressable>
         </View>
         <ScrollView
@@ -526,24 +529,20 @@ export default function HomePage() {
           {CATEGORIES.map((cat) => (
             <AnimatedPressable
               key={cat.key}
-              style={st.catCard}
-              onPress={() =>
-                router.push(`/search?q=${encodeURIComponent(cat.key)}` as Href)
-              }
+              style={st.catItem}
+              onPress={() => router.push(`/search?q=${encodeURIComponent(cat.key)}` as Href)}
               haptic
             >
-              <View style={st.catIcon}>
+              <View style={st.catCard}>
                 <ProduceImage
                   title={cat.key}
                   category={cat.key}
                   imageUrl={cat.image}
                   style={st.catImage}
+                  contentFit="cover"
                 />
               </View>
-              <Text
-                style={[st.catLabel, { color: cat.color }]}
-                numberOfLines={1}
-              >
+              <Text style={st.catLabel} numberOfLines={2}>
                 {cat.key}
               </Text>
             </AnimatedPressable>
@@ -895,43 +894,29 @@ const st = StyleSheet.create({
   viewAll: { color: GREEN, fontWeight: "800", fontSize: 13 },
 
   // Categories
-  catRow: {
-    gap: 12,
-    paddingRight: 16,
-    paddingBottom: 24,
-  },
-
-  catCard: {
-    width: 92,
-    minHeight: 118,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: BRAND.borderLight,
+  catRow: { gap: 12, paddingRight: 16, marginBottom: 24 },
+  catItem: {
+    width: 96,
     alignItems: "center",
-    paddingTop: 6,
-    paddingBottom: 10,
-    paddingHorizontal: 5,
-    ...CARD_SHADOW,
   },
-
-  catIcon: {
-    width: 78,
-    height: 78,
+  catCard: {
+    width: 96,
+    height: 72,
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: BRAND.borderLight,
+    ...CARD_SHADOW,
   },
-
-  catImage: {
-    width: "100%",
-    height: "100%",
-  },
-
+  catImage: { width: 96, height: 72 },
   catLabel: {
-    marginTop: 7,
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 11.5,
+    fontWeight: "600",
+    color: BRAND.text,
     textAlign: "center",
+    marginTop: 7,
+    lineHeight: 15,
   },
 
   // Price cards

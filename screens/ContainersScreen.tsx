@@ -1,6 +1,3 @@
-
-
-
 import EmptyState from "@/components/EmptyState";
 import ProduceImage from "@/components/ProduceImage";
 import VegLoader from "@/components/VegLoader";
@@ -283,7 +280,11 @@ export default function ContainersScreen() {
         style={styles.heartBtn}
         onPress={() => session.toggleWishlist(wishPayload(item))}
       >
-        <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={16} color={wishlisted ? "#E11D48" : GREEN} />
+        <Ionicons
+          name={wishlisted ? "heart" : "heart-outline"}
+          size={18}
+          color={wishlisted ? "#E11D48" : "#111111"}
+        />
       </Pressable>
     );
   }
@@ -295,6 +296,10 @@ export default function ContainersScreen() {
 
     return (
       <Pressable style={styles.card} onPress={() => session.openAdInsights(JSON.stringify(item))}>
+        {session.isLoggedIn ? (
+          <View style={styles.cardHeart}>{renderHeart(item)}</View>
+        ) : null}
+
         <View style={styles.imageWrap}>
           <ProduceImage
             title={item.title}
@@ -302,7 +307,6 @@ export default function ContainersScreen() {
             imageUrl={item.image_url}
             style={styles.image}
           />
-          {session.isLoggedIn ? <View style={styles.imageHeart}>{renderHeart(item)}</View> : null}
           {badge ? (
             <View style={styles.imageBadge}>
               <Text style={styles.imageBadgeText}>{badge}</Text>
@@ -346,11 +350,14 @@ export default function ContainersScreen() {
 
     return (
       <Pressable style={styles.card} onPress={() => session.openAdInsights(JSON.stringify(item))}>
+        {session.isLoggedIn ? (
+          <View style={styles.cardHeart}>{renderHeart(item)}</View>
+        ) : null}
+
         <View style={styles.upcomingCorner}>
           <View style={styles.soonBadge}>
             <Text style={styles.soonText}>Arriving Soon</Text>
           </View>
-          {session.isLoggedIn ? renderHeart(item) : null}
         </View>
         <View style={styles.imageWrap}>
           <ProduceImage
@@ -528,11 +535,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#E8EEE9",
   },
   image: { width: 108, height: 108, borderRadius: 14 },
-  imageHeart: {
+  cardHeart: {
     position: "absolute",
-    top: 6,
-    right: 6,
-    zIndex: 3,
+    top: 10,
+    right: 10,
+    zIndex: 10,
   },
   heartBtn: {
     width: 28,
@@ -552,7 +559,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   imageBadgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "800" },
-  body: { flex: 1, minWidth: 0, justifyContent: "center" },
+  body: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+    paddingRight: 34,
+  },
   upcomingBody: { paddingTop: 28, paddingRight: 4 },
   product: { fontSize: 15, fontWeight: "800", color: "#111827" },
   meta: { marginTop: 4, fontSize: 12, color: "#6B7280", fontWeight: "600" },
@@ -570,10 +582,7 @@ const styles = StyleSheet.create({
   upcomingCorner: {
     position: "absolute",
     top: 10,
-    right: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    right: 48,
     zIndex: 4,
   },
   soonBadge: {
