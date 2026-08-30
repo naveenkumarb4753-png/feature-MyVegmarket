@@ -1,7 +1,6 @@
 import { BRAND } from "@/constants/colors";
-import { readInquiries, type Inquiry } from "@/lib/inquiries";
-import { planDisplayName, readPlanTier } from "@/lib/subscriptionPlan";
 import { useAppSession } from "@/lib/appSession";
+import { readInquiries, type Inquiry } from "@/lib/inquiries";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -19,12 +18,10 @@ export default function BuyerDashboard() {
   const session = useAppSession();
   const router = useRouter();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [planName, setPlanName] = useState("Free Tier");
 
   useFocusEffect(
     useCallback(() => {
       readInquiries().then(setInquiries);
-      readPlanTier().then((t) => setPlanName(planDisplayName(t)));
     }, [])
   );
 
@@ -38,7 +35,7 @@ export default function BuyerDashboard() {
         <Text style={styles.title}>My Dashboard</Text>
         {session.isLoggedIn ? (
           <Pressable style={styles.wishBtn} onPress={() => session.setWishlistOpen(true)}>
-            <Ionicons name="heart" size={20} color={BRAND.primary} />
+            <Ionicons name="star" size={20} color={BRAND.primary} />
             {session.wishlist.length > 0 ? (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{session.wishlist.length}</Text>
@@ -49,22 +46,6 @@ export default function BuyerDashboard() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.tierCard}>
-          <View style={styles.tierHeader}>
-            <View>
-              <Text style={styles.tierLabel}>Current Plan</Text>
-              <Text style={styles.tierName}>{planName}</Text>
-            </View>
-            <View style={styles.tierIcon}>
-              <Ionicons name="ribbon-outline" size={22} color={BRAND.gold} />
-            </View>
-          </View>
-          <Pressable style={styles.upgradeBtn} onPress={() => router.push("/upgrade" as Href)}>
-            <Text style={styles.upgradeBtnText}>Upgrade Subscription</Text>
-            <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-          </Pressable>
-        </View>
-
         <Pressable style={styles.inquiryCard} onPress={() => router.push("/inquiry-box" as Href)}>
           <Ionicons name="mail-unread-outline" size={24} color={BRAND.primary} />
           <View style={styles.inquiryCopy}>
@@ -166,7 +147,7 @@ export default function BuyerDashboard() {
                   </View>
                 ) : null}
               </View>
-              <Ionicons name="heart" size={18} color="#E11D48" />
+              <Ionicons name="star" size={18} color="#E11D48" />
             </Pressable>
           ))
         )}
@@ -208,23 +189,7 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "800" },
   content: { padding: 16, paddingBottom: 32 },
-  tierCard: {
-    backgroundColor: BRAND.surface,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: BRAND.border,
-    marginBottom: 14,
-  },
-  tierHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  tierIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "#FEF3C7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   tierLabel: { fontSize: 12, fontWeight: "700", color: BRAND.muted },
   tierName: { fontSize: 20, fontWeight: "900", color: BRAND.text, marginTop: 4 },
   upgradeBtn: {

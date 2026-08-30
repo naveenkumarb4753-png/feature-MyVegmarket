@@ -91,7 +91,7 @@ function CustomTabBar() {
               key={item.key}
               style={styles.postWrap}
               onPress={item.onPress}
-              android_ripple={{ color: "rgba(10,138,58,0.12)", radius: 28 }}
+              android_ripple={{ color: "rgba(246, 250, 248, 0.12)", radius: 28 }}
             >
               <View style={styles.postBtn}>
                 <Ionicons name="add" size={26} color="#FFFFFF" />

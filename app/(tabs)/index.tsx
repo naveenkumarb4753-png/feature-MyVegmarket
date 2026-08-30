@@ -137,10 +137,6 @@ function HeroBannerCarousel({
       ]}
     >
       <View style={heroStyles.cardCopy}>
-        <View style={heroStyles.livePill}>
-          <View style={heroStyles.liveDot} />
-          <Text style={heroStyles.liveText}>LIVE</Text>
-        </View>
         <Text style={heroStyles.cardTitle}>{banner.title}</Text>
         <Text style={heroStyles.cardSub}>{banner.sub}</Text>
         <AnimatedPressable
@@ -477,9 +473,9 @@ export default function HomePage() {
                 onPress={() => session.setWishlistOpen(true)}
                 haptic
               >
-                <Ionicons name="heart-outline" size={22} color={GREEN} />
+                <Ionicons name="star-outline" size={22} color="#000000" />
                 {session.wishlist.length > 0 ? (
-                  <View style={st.heartBadge}>
+                  <View style={st.starBadge}>
                     <Text style={st.heartBadgeText}>
                       {session.wishlist.length}
                     </Text>
@@ -549,7 +545,113 @@ export default function HomePage() {
           ))}
         </ScrollView>
 
-        {/* ── Al Aweer Prices ── */}
+        {/* ── Featured Shipments ── */}
+        <View style={[st.sectionHead, { marginTop: 10 }]}>
+          <Text style={st.sectionTitle}>Featured Shipments</Text>
+          <Pressable onPress={() => router.push("/(tabs)/containers" as Href)}>
+            <Text style={st.viewAll}>View All →</Text>
+          </Pressable>
+        </View>
+
+        {(ads.length ? ads : FALLBACK_ADS).slice(0, 4).map((item, index) => {
+          const origin = item.route_from || "Peru";
+          const wishlisted =
+            session.isLoggedIn && session.isWishlisted(item.id);
+          const showNew = item.created_at
+            ? isNewListing(item.created_at)
+            : false;
+          const showFeatured =false; // Placeholder for future logic to determine if an ad is featured
+          return (
+            <AnimatedPressable
+              key={item.id}
+              style={st.adCard}
+              onPress={() => session.openAdInsights(JSON.stringify(item))}
+              haptic
+            >
+              <View style={st.adImageWrap}>
+                <ProduceImage
+                  title={item.title}
+                  category={item.category}
+                  imageUrl={item.image_url}
+                  style={st.adImage}
+                />
+                <View style={st.adBadges}>
+                  {showFeatured && (
+                    <View style={st.featuredBadge}>
+                      <Text style={st.badgeOnImageText}>Featured</Text>
+                    </View>
+                  )}
+                  {showNew && (
+                    <View style={st.newBadge}>
+                      <Text style={st.badgeOnImageText}>New</Text>
+                    </View>
+                  )}
+                </View>
+               
+              </View>
+               {session.isLoggedIn ? (
+                  <AnimatedPressable
+                    style={st.starOnBox}
+                    hitSlop={8}
+                    onPress={() =>
+                      session.toggleWishlist({
+                        id: item.id,
+                        title: item.title || "Fresh Produce",
+                        origin,
+                        location: item.market_location || item.route_to,
+                        priceLabel: formatPrice(item.currency, item.price),
+                        imageUrl: item.image_url,
+                        containerLabel: containerLabel(
+                          item.container_type,
+                          item.qty,
+                        ),
+                      })
+                    }
+                    haptic
+                  >
+                    <Ionicons
+                      name={wishlisted ? "star" : "star-outline"}
+                      size={15}
+                      color={wishlisted ? "#E11D48" : "#000000"}
+                    />
+                  </AnimatedPressable>
+                ) : null}
+              <View style={st.adBody}>
+                <Text style={st.cardTitle} numberOfLines={1}>
+                  {item.title || "Fresh Produce"}
+                </Text>
+                <View style={st.metaRow}>
+                  <Text style={st.meta}>
+                    {countryFlag(origin)} {origin}
+                  </Text>
+                </View>
+                <View style={st.metaRow}>
+                  <Ionicons name="cube-outline" size={13} color={BRAND.muted} />
+                  <Text style={st.meta}>
+                    {containerLabel(item.container_type, item.qty)}
+                  </Text>
+                </View>
+                <View style={st.metaRow}>
+                  <Ionicons
+                    name="location-outline"
+                    size={13}
+                    color={BRAND.muted}
+                  />
+                  <Text style={st.meta}>
+                    {item.market_location || item.route_to || "Dubai"}
+                  </Text>
+                </View>
+                <Text style={st.adPrice}>
+                  {formatPrice(item.currency, item.price)} / Container
+                </Text>
+              </View>
+            </AnimatedPressable>
+          );
+        })}
+        
+
+        
+         {/* ── Al Aweer Prices ── */}
         <View style={st.sectionHead}>
           <Text style={st.sectionTitle}>Al Aweer Prices</Text>
           <Pressable onPress={() => router.push("/(tabs)/prices" as Href)}>
@@ -592,109 +694,6 @@ export default function HomePage() {
                 <Text style={st.trendText}>
                   {item.changePct > 0 ? "+" : ""}
                   {item.changePct}%
-                </Text>
-              </View>
-            </AnimatedPressable>
-          );
-        })}
-
-        {/* ── Featured Shipments ── */}
-        <View style={[st.sectionHead, { marginTop: 10 }]}>
-          <Text style={st.sectionTitle}>Featured Shipments</Text>
-          <Pressable onPress={() => router.push("/(tabs)/containers" as Href)}>
-            <Text style={st.viewAll}>View All →</Text>
-          </Pressable>
-        </View>
-
-        {(ads.length ? ads : FALLBACK_ADS).slice(0, 4).map((item, index) => {
-          const origin = item.route_from || "Peru";
-          const wishlisted =
-            session.isLoggedIn && session.isWishlisted(item.id);
-          const showNew = item.created_at
-            ? isNewListing(item.created_at)
-            : false;
-          const showFeatured = index === 0 || (!showNew && index < 2);
-          return (
-            <AnimatedPressable
-              key={item.id}
-              style={st.adCard}
-              onPress={() => session.openAdInsights(JSON.stringify(item))}
-              haptic
-            >
-              <View style={st.adImageWrap}>
-                <ProduceImage
-                  title={item.title}
-                  category={item.category}
-                  imageUrl={item.image_url}
-                  style={st.adImage}
-                />
-                <View style={st.adBadges}>
-                  {showFeatured && (
-                    <View style={st.featuredBadge}>
-                      <Text style={st.badgeOnImageText}>Featured</Text>
-                    </View>
-                  )}
-                  {showNew && (
-                    <View style={st.newBadge}>
-                      <Text style={st.badgeOnImageText}>New</Text>
-                    </View>
-                  )}
-                </View>
-                {session.isLoggedIn ? (
-                  <AnimatedPressable
-                    style={st.heartOnImage}
-                    hitSlop={8}
-                    onPress={() =>
-                      session.toggleWishlist({
-                        id: item.id,
-                        title: item.title || "Fresh Produce",
-                        origin,
-                        location: item.market_location || item.route_to,
-                        priceLabel: formatPrice(item.currency, item.price),
-                        imageUrl: item.image_url,
-                        containerLabel: containerLabel(
-                          item.container_type,
-                          item.qty,
-                        ),
-                      })
-                    }
-                    haptic
-                  >
-                    <Ionicons
-                      name={wishlisted ? "heart" : "heart-outline"}
-                      size={15}
-                      color={wishlisted ? "#E11D48" : GREEN}
-                    />
-                  </AnimatedPressable>
-                ) : null}
-              </View>
-              <View style={st.adBody}>
-                <Text style={st.cardTitle} numberOfLines={1}>
-                  {item.title || "Fresh Produce"}
-                </Text>
-                <View style={st.metaRow}>
-                  <Text style={st.meta}>
-                    {countryFlag(origin)} {origin}
-                  </Text>
-                </View>
-                <View style={st.metaRow}>
-                  <Ionicons name="cube-outline" size={13} color={BRAND.muted} />
-                  <Text style={st.meta}>
-                    {containerLabel(item.container_type, item.qty)}
-                  </Text>
-                </View>
-                <View style={st.metaRow}>
-                  <Ionicons
-                    name="location-outline"
-                    size={13}
-                    color={BRAND.muted}
-                  />
-                  <Text style={st.meta}>
-                    {item.market_location || item.route_to || "Dubai"}
-                  </Text>
-                </View>
-                <Text style={st.adPrice}>
-                  {formatPrice(item.currency, item.price)} / Container
                 </Text>
               </View>
             </AnimatedPressable>
@@ -822,7 +821,7 @@ const st = StyleSheet.create({
     borderWidth: 1,
     borderColor: BRAND.borderLight,
   },
-  heartBadge: {
+  starBadge: {
     position: "absolute",
     top: -4,
     right: -4,
@@ -997,16 +996,17 @@ const st = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeOnImageText: { color: "#FFFFFF", fontSize: 9, fontWeight: "900" },
-  heartOnImage: {
+  starOnBox: {
     position: "absolute",
-    top: 6,
-    right: 6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 10,
     ...CARD_SHADOW,
   },
 });

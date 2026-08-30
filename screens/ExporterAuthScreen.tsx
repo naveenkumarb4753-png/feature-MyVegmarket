@@ -1,16 +1,15 @@
-import * as ImagePicker from "expo-image-picker";
-import { supabase } from "@/lib/supabase";
+import AnimatedPressable from "@/components/AnimatedPressable";
+import { BRAND } from "@/constants/colors";
+import { useAppSession } from "@/lib/appSession";
 import {
   clearExporterSession,
   loginExporter,
   signupExporter,
 } from "@/lib/exporterAuth";
-import { useAppSession } from "@/lib/appSession";
 import { isVerifiedAdmin } from "@/lib/rolesMobile";
-import { planDisplayName, readPlanTier } from "@/lib/subscriptionPlan";
-import { BRAND } from "@/constants/colors";
-import AnimatedPressable from "@/components/AnimatedPressable";
+import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -44,8 +43,7 @@ export default function ExporterAuthScreen() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [planName, setPlanName] = useState("Free Tier");
-
+ 
   // Edit Profile modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editUsername, setEditUsername] = useState("");
@@ -114,7 +112,6 @@ export default function ExporterAuthScreen() {
   useFocusEffect(
     useCallback(() => {
       session.refreshSession();
-      readPlanTier().then((t) => setPlanName(planDisplayName(t)));
     }, [session.refreshSession])
   );
 
@@ -235,22 +232,17 @@ export default function ExporterAuthScreen() {
             <Text style={styles.pageTitle}>{displayName}</Text>
             <Text style={styles.email}>{session.email}</Text>
             {companyName ? <Text style={styles.companySub}>{companyName}</Text> : null}
-
-            <View style={styles.planChip}>
-              <Ionicons name="ribbon-outline" size={14} color={BRAND.gold} />
-              <Text style={styles.planChipText}>{planName}</Text>
-            </View>
           </View>
 
           <Text style={styles.sectionLabel}>Your Dashboards</Text>
           <View style={styles.dashboardGrid}>
             <AnimatedPressable style={styles.dashCard} onPress={() => router.push("/dashboard-buyer" as Href)}>
               <View style={[styles.dashIcon, { backgroundColor: BRAND.primaryLight }]}>
-                <Ionicons name="heart-outline" size={22} color={BRAND.primary} />
+                <Ionicons name="star-outline" size={22} color={BRAND.primary} />
               </View>
               <View style={styles.dashCopy}>
                 <Text style={styles.dashTitle}>My Dashboard</Text>
-                <Text style={styles.dashSub}>Wishlist · Inquiries · Plan</Text>
+                <Text style={styles.dashSub}>Wishlist · Inquiries  </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={BRAND.muted} />
             </AnimatedPressable>
@@ -281,23 +273,6 @@ export default function ExporterAuthScreen() {
               </AnimatedPressable>
             ) : null}
           </View>
-
-          <View style={styles.quickRow}>
-            <AnimatedPressable style={styles.quickBtn} onPress={() => session.setWishlistOpen(true)}>
-              <Ionicons name="heart" size={18} color={BRAND.primary} />
-              <Text style={styles.quickText}>Wishlist ({session.wishlist.length})</Text>
-            </AnimatedPressable>
-            <AnimatedPressable style={styles.quickBtn} onPress={() => router.push("/inquiry-box" as Href)}>
-              <Ionicons name="mail-outline" size={18} color={BRAND.primary} />
-              <Text style={styles.quickText}>Inquiry Box</Text>
-            </AnimatedPressable>
-          </View>
-
-          <AnimatedPressable style={styles.upgradeRow} onPress={() => router.push("/upgrade" as Href)}>
-            <Ionicons name="diamond-outline" size={18} color={BRAND.gold} />
-            <Text style={styles.upgradeRowText}>Upgrade Subscription</Text>
-            <Ionicons name="chevron-forward" size={16} color={BRAND.muted} />
-          </AnimatedPressable>
 
           <AnimatedPressable style={styles.logout} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>
@@ -586,17 +561,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: { fontSize: 26, fontWeight: "900", color: BRAND.text },
   email: { marginTop: 4, fontWeight: "700", color: BRAND.muted },
-  planChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 10,
-    backgroundColor: "#FEF3C7",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  planChipText: { fontWeight: "800", color: BRAND.gold, fontSize: 12 },
+ 
   sectionLabel: {
     fontSize: 13,
     fontWeight: "800",
@@ -640,18 +605,7 @@ const styles = StyleSheet.create({
     borderColor: BRAND.border,
   },
   quickText: { fontWeight: "800", color: BRAND.text, fontSize: 13 },
-  upgradeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: BRAND.surface,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: BRAND.border,
-  },
-  upgradeRowText: { flex: 1, fontWeight: "800", color: BRAND.text },
+  
   subtitle: { fontSize: 14, lineHeight: 20, color: BRAND.muted, fontWeight: "600", marginBottom: 16 },
   card: {
     backgroundColor: BRAND.surface,

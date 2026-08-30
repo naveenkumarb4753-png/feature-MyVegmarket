@@ -1,7 +1,6 @@
-import { supabase } from "@/lib/supabase";
-import { useAppSession } from "@/lib/appSession";
-import VegLoader from "@/components/VegLoader";
 import EmptyState from "@/components/EmptyState";
+import VegLoader from "@/components/VegLoader";
+import { useAppSession } from "@/lib/appSession";
 import {
   GREEN,
   HD_IMAGES,
@@ -12,6 +11,7 @@ import {
   matchCategory,
   produceImage,
 } from "@/lib/produceUi";
+import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -323,7 +323,7 @@ export default function SearchScreen() {
                 hitSlop={8}
                 onPress={() => session.toggleWishlist(wishPayload(item))}
               >
-                <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={18} color={GREEN} />
+                <Ionicons name={wishlisted ? "heart" : "star-outline"} size={18} color={GREEN} />
               </Pressable>
             ) : null}
             {isProduct ? (
@@ -380,7 +380,7 @@ export default function SearchScreen() {
         </View>
         {session.isLoggedIn ? (
           <Pressable style={styles.filterBtn} onPress={() => session.setWishlistOpen(true)}>
-            <Ionicons name="heart-outline" size={21} color="#111827" />
+            <Ionicons name="star-outline" size={21} color="#111827" />
           </Pressable>
         ) : null}
         <Pressable

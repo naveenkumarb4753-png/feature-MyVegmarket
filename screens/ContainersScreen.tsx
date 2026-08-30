@@ -281,7 +281,7 @@ export default function ContainersScreen() {
         onPress={() => session.toggleWishlist(wishPayload(item))}
       >
         <Ionicons
-          name={wishlisted ? "heart" : "heart-outline"}
+          name={wishlisted ? "heart" : "star-outline"}
           size={18}
           color={wishlisted ? "#E11D48" : "#111111"}
         />
@@ -423,7 +423,7 @@ export default function ContainersScreen() {
           </Pressable>
           {session.isLoggedIn ? (
             <Pressable onPress={() => session.setWishlistOpen(true)} style={styles.iconBtn} hitSlop={8}>
-              <Ionicons name="heart-outline" size={20} color={GREEN} />
+              <Ionicons name="star-outline" size={20} color={GREEN} />
             </Pressable>
           ) : null}
         </View>

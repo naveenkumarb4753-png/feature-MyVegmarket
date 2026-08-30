@@ -1,4 +1,5 @@
 import { getExporterSession } from "@/lib/exporterAuth";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, type Href } from "expo-router";
 import React, {
@@ -18,7 +19,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type UserRole = "buyer" | "seller";
@@ -422,7 +422,7 @@ function WishlistDrawer() {
           <View style={drawerStyles.header}>
             <View style={drawerStyles.headerLeft}>
               <View style={drawerStyles.heartIconWrap}>
-                <Ionicons name="heart" size={18} color="#E11D48" />
+                <Ionicons name="star" size={18} color="#E11D48" />
               </View>
               <View>
                 <Text style={drawerStyles.title}>My Wishlist</Text>
@@ -437,7 +437,7 @@ function WishlistDrawer() {
           <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 14 }}>
             {session.wishlist.length === 0 ? (
               <View style={drawerStyles.emptyWrap}>
-                <Ionicons name="heart-outline" size={40} color="#D1D5DB" />
+                <Ionicons name="star-outline" size={40} color="#D1D5DB" />
                 <Text style={drawerStyles.empty}>No saved shipments yet.</Text>
                 <Text style={drawerStyles.emptySub}>Tap ♥ on any listing to save it here.</Text>
               </View>
@@ -476,7 +476,7 @@ function WishlistDrawer() {
                     hitSlop={12}
                     style={drawerStyles.removeBtn}
                   >
-                    <Ionicons name="heart" size={18} color="#E11D48" />
+                    <Ionicons name="star" size={18} color="#E11D48" />
                   </Pressable>
                 </Pressable>
               ))

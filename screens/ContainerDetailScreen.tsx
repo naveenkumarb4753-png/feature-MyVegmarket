@@ -7,11 +7,10 @@ import { safeBack } from "@/lib/nav";
 import {
   categoryAccent,
   containerLabel,
-  countryFlag,
   formatArrived,
   formatPrice,
   isNewListing,
-  produceImage,
+  produceImage
 } from "@/lib/produceUi";
 import { isVerifiedAdmin } from "@/lib/rolesMobile";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,11 +18,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -157,6 +157,27 @@ export default function ContainerDetailScreen() {
       return null;
     }
   }, [params]);
+  const handleInquiry = async () => {
+  const phoneNumber = "919876543210"; // Replace with your number
+
+  const message =
+    `New inquiry received!\n` +
+    `Product: ${item?.title || "Shipment"}\n` +
+    `Rate: ${item ? displayRate(item) : "N/A"}`;
+
+  const url =
+    `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+  try {
+    await Linking.openURL(url);
+
+    setTimeout(() => {
+      router.push("/inquiry-box");
+    }, 1000);
+  } catch (error) {
+    console.log("Could not open WhatsApp:", error);
+  }
+};
 
   useEffect(() => {
     if (!session.ready) return;
@@ -226,7 +247,7 @@ export default function ContainerDetailScreen() {
             haptic
           >
             <Ionicons
-              name={wishlisted ? "heart" : "heart-outline"}
+              name={wishlisted ? "star" : "star-outline"}
               size={20}
               color={wishlisted ? "#E11D48" : BRAND.primary}
             />
@@ -245,29 +266,9 @@ export default function ContainerDetailScreen() {
                 <Text style={styles.badgeText}>New Listing</Text>
               </View>
             )}
-            {item.category ? (
-              <View style={[styles.badge, { backgroundColor: accent.accent }]}>
-                <Text style={styles.badgeText}>{accent.label}</Text>
-              </View>
-            ) : null}
           </View>
         </View>
 
-        {/* ── Price highlight ── */}
-        <View style={styles.priceHighlight}>
-          <View style={styles.priceBlock}>
-            <Text style={styles.priceLabel}>Price</Text>
-            <Text style={styles.priceValue}>{displayRate(item)}</Text>
-            <Text style={styles.priceUnit}>{displayRateUnit(item)}</Text>
-          </View>
-          {arrivalDate ? (
-            <View style={[styles.priceBlock, styles.arrivalBlock]}>
-              <Text style={[styles.priceLabel, { color: "rgba(255,255,255,0.8)" }]}>Availability</Text>
-              <Text style={[styles.priceValue, { fontSize: 18 }]}>{arrivalDate}</Text>
-              <Text style={[styles.priceUnit, { color: "rgba(255,255,255,0.7)" }]}>Arrival Date</Text>
-            </View>
-          ) : null}
-        </View>
 
         {/* ── Title ── */}
         <Text style={styles.title}>{item.title || "Container Listing"}</Text>
@@ -280,41 +281,15 @@ export default function ContainerDetailScreen() {
         {/* ── Details Panel ── */}
         <View style={styles.detailPanel}>
           <Text style={styles.panelHeading}>Shipment Details</Text>
-          <MetaRow
-            icon="location-outline"
-            label="Origin"
-            value={`${countryFlag(origin)} ${origin}`}
-          />
-          <MetaRow
-            icon="navigate-outline"
-            label="Route"
-            value={`${item.route_from || "—"} → ${item.route_to || "—"}`}
-          />
-          <MetaRow
-            icon="cube-outline"
-            label="Container"
-            value={displayContainer(item)}
-            accentColor={BRAND.primary}
-          />
-          <MetaRow
-            icon="storefront-outline"
-            label="Market Location"
-            value={item.market_location || item.route_to || "Dubai"}
-          />
-          <MetaRow
-            icon="calendar-outline"
-            label="Availability Date"
-            value={arrivalDate || "Not specified"}
-            accentColor={arrivalDate ? BRAND.accent : undefined}
-          />
-          {item.category ? (
+          {arrivalDate ? (
             <MetaRow
-              icon="leaf-outline"
-              label="Category"
-              value={accent.label}
-              accentColor={accent.accent}
+              icon="calendar-outline"
+              label="Availability Date"
+              value={arrivalDate || "Not specified"}
+              accentColor={arrivalDate ? BRAND.accent : undefined}
             />
           ) : null}
+      
           {displayPackagingType(item) ? (
             <MetaRow
               icon="layers-outline"
@@ -365,7 +340,7 @@ export default function ContainerDetailScreen() {
         {/* ── Inquiry CTA ── */}
         <AnimatedPressable
           style={styles.inquiryBtn}
-          onPress={() => router.push("/inquiry-box")}
+          onPress={handleInquiry}
           haptic
         >
           <Ionicons name="mail-outline" size={18} color="#FFFFFF" />
